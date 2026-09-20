@@ -11,20 +11,31 @@ import UltraCore
         var modifierFields: [String:Int] = [:]
         var storedReads = 0
         var corruptNextUpload = false
+        var programBank = 0
+        var ignoreNextProgram = false
+        var holdHeartbeat = false
         var device = baseline, requests: [[UInt8]] = []
         func update(_ payload: [UInt8]) {
             device = try! UltraPreset(message:UltraProtocol.modernHeader + [4,1,0,0] + payload.flatMap { UltraProtocol.nibbles(Int($0)) } + UltraProtocol.nibbles(Int(payload.reduce(0,^))) + [0xF7])
         }
         model.attachTestTransport { bytes in
             requests.append(bytes)
+            if bytes[0] & 0xF0 == 0xB0 { programBank = Int(bytes[2]); return }
+            if bytes[0] & 0xF0 == 0xC0 {
+                if ignoreNextProgram { ignoreNextProgram = false; return }
+                device = try baseline.renamed("Slot \(programBank*128+Int(bytes[1]))"); return
+            }
             let h = UltraProtocol.modernHeader
             var reply: [UInt8]
             switch bytes[5] {
+            case 8:
+                if holdHeartbeat { return }
+                reply = h+[8,11,0,0xF7]
             case 3:
                 if bytes[6] == 0 {
                     storedReads += 1
                     let slot = Int(bytes[7]) | Int(bytes[8]) << 4
-                    reply = try baseline.forStorage(slot:slot & 255)
+                    reply = try baseline.renamed("Slot \(slot)").forStorage(slot:slot & 255)
                     // A reply for a different address must never populate this slot.
                     model.receiveTestMessage(try baseline.forStorage(slot:(slot+1)%384))
                 } else { reply = device.forEditBuffer() }
@@ -61,15 +72,28 @@ import UltraCore
         }
         func drain() {
             let until = Date().addingTimeInterval(20)
-            repeat { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) } while (model.busy > 0 || model.readingDevice || model.modifierScanning || model.modifierApplying) && Date() < until
+            repeat { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) } while (model.busy > 0 || model.readingDevice || model.modifierScanning || model.modifierApplying || model.librarySwitching) && Date() < until
             precondition(model.busy == 0,"Queue stuck")
             precondition(model.errorMessage == nil,model.errorMessage ?? "")
         }
         model.refreshPreset(); drain()
         precondition(model.presetName == baseline.name && model.values["106:1"]?.text == "Device 151","Initial read must populate live controls")
         print("PASS initial refresh, live control reads and unsafe-query exclusion")
-        model.snapshotTitle = "Baseline"; model.captureSnapshot(); drain()
+        holdHeartbeat = true
+        let beforeHeartbeat = requests.count
+        for _ in 0..<3 { model.ping() }
+        precondition(requests.count == beforeHeartbeat+1, "Only one health probe may be outstanding")
+        precondition(model.busy == 0 && model.canOperate && model.canActivateLibrary, "Health checks must not grey out controls")
+        RunLoop.main.run(until:Date().addingTimeInterval(0.05))
+        precondition(model.busy == 0 && model.canOperate)
+        model.snapshotTitle = "During health check"; model.captureSnapshot()
+        precondition(model.busy > 0 && !model.canOperate, "Actual user transactions must still lock controls")
+        model.receiveTestMessage(UltraProtocol.modernHeader+[8,11,0,0xF7])
+        holdHeartbeat = false; drain()
         precondition(model.snapshots.count == 1 && model.snapshots[0].preset?.payload == baseline.payload)
+        print("PASS silent health probe, duplicate suppression and serialized foreground work")
+        model.snapshotTitle = "Baseline"; model.captureSnapshot(); drain()
+        precondition(model.snapshots.count == 2 && model.snapshots[0].preset?.payload == baseline.payload)
         let drive = model.catalog!.effect(106)!.parameters.first { $0.id == 1 }!
         model.set(drive,raw:150); drain(); precondition(model.undoValues.count == 1)
         model.compareSnapshot(model.snapshots[0]); drain()
@@ -211,6 +235,71 @@ import UltraCore
         model.readDeviceSlots([1,2,3]); model.stopDeviceRead(); drain()
         precondition(storedReads == 8 && model.devicePresets[1] == nil && !model.readingDevice)
         print("PASS stored bank boundaries, address matching, duplicate names, cancellation and no writes")
+        // Library navigation must recall real slots, including both bank boundaries.
+        model.librarySearch = ""
+        precondition(model.adjacentLibraryItem([127,128],selected:127,direction:1) == 128)
+        precondition(model.adjacentLibraryItem([0,1],selected:0,direction:-1) == nil)
+        precondition(model.adjacentLibraryItem([0,1],selected:nil,direction:1) == 0)
+        precondition(model.adjacentLibraryItem([0,1],selected:99,direction:-1) == 1)
+        precondition(model.adjacentLibraryItem([Int](),selected:nil,direction:1) == nil)
+        func fixture(_ payload:[UInt8]) throws -> UltraPreset {
+            try UltraPreset(message:UltraProtocol.modernHeader+[4,1,0,0]+payload.flatMap { UltraProtocol.nibbles(Int($0)) }+UltraProtocol.nibbles(Int(payload.reduce(0,^)))+[247])
+        }
+        var legacyAmp = baseline.payload
+        let ampOffset = 130
+        precondition(legacyAmp[ampOffset] == 106 && legacyAmp[ampOffset+1] == 39)
+        legacyAmp[ampOffset+13] = 254
+        legacyAmp.remove(at:ampOffset+40); legacyAmp.append(0); legacyAmp[ampOffset+1] = 38
+        let oldAmp = try fixture(legacyAmp)
+        legacyAmp[ampOffset+13] = 216; legacyAmp.insert(127,at:ampOffset+40); legacyAmp.removeLast(); legacyAmp[ampOffset+1] = 39
+        precondition(model.recalledPresetMatches(try! fixture(legacyAmp),stored:oldAmp))
+        legacyAmp[ampOffset+3] ^= 1
+        precondition(model.recalledPresetMatches(try! fixture(legacyAmp),stored:oldAmp))
+        var blank = [UInt8](repeating:0,count:1024)
+        blank.replaceSubrange(130..<136,with:[139,4,51,112,127,127])
+        let storedBlank = try fixture(blank)
+        blank[136] = 140; blank[137] = 13; blank[151] = 141; blank[152] = 55
+        precondition(model.recalledPresetMatches(try! fixture(blank),stored:storedBlank))
+        blank[34] = 106; precondition(!model.recalledPresetMatches(try! fixture(blank),stored:storedBlank)); blank[34] = 0
+        blank[2] = 65; precondition(!model.recalledPresetMatches(try! fixture(blank),stored:storedBlank)); blank[2] = 0
+        blank[151] = 106; precondition(!model.recalledPresetMatches(try! fixture(blank),stored:storedBlank))
+        let switchesStart = requests.count
+        for slot in [127,128,255,256,383] {
+            model.activateDeviceSlot(slot)
+            let during = requests.count
+            model.activateDeviceSlot(12) // Repeated activation cannot enqueue a second switch.
+            precondition(requests.count == during)
+            drain()
+            precondition(device.name == "Slot \(slot)" && model.presetNumber == slot && model.selectedLibrarySlot == slot)
+            precondition(model.currentPreset?.payload == device.payload && !model.librarySwitching && !model.dirty)
+        }
+        precondition(requests.dropFirst(switchesStart).allSatisfy { $0.count < 6 || $0[5] == 3 },"Navigation must not upload or store presets")
+        model.librarySearch = "Slot 12"
+        precondition(model.visibleDeviceSlots(bank:-1) == [127,128])
+        model.selectedLibrarySlot = 127; model.navigateDeviceLibrary(1,bank:-1); drain()
+        precondition(model.presetNumber == 128)
+        model.navigateDeviceLibrary(-1,bank:-1); drain(); precondition(model.presetNumber == 127)
+        model.librarySearch = "130"; precondition(model.visibleDeviceSlots(bank:2) == [130])
+        model.librarySearch = ""
+        let previous = device
+        ignoreNextProgram = true; model.activateDeviceSlot(256)
+        let mismatchDeadline = Date().addingTimeInterval(6)
+        while model.librarySwitching && Date() < mismatchDeadline { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) }
+        precondition(model.errorMessage?.contains("recall readback differs") == true && !model.librarySwitching)
+        precondition(model.snapshots.first?.preset?.payload == previous.payload)
+        model.errorMessage = nil
+        let macA = SavedPreset(preset:try baseline.renamed("A local"),source:"QA",favorite:true)
+        let macB = SavedPreset(preset:try baseline.renamed("B local"),source:"QA",favorite:true)
+        let savedLibrary = model.library
+        model.library = [macB,macA]; model.favoritesOnly = true
+        model.activateMacPreset(macA); drain(); precondition(device.name == "A local" && model.inspectedLibrary == nil)
+        model.navigateMacLibrary(1); drain(); precondition(device.name == "B local" && model.selectedMacPreset == macB.id)
+        model.navigateMacLibrary(-1); drain(); precondition(device.name == "A local")
+        let beforePreview = requests.count
+        model.previewMacPreset(macB); precondition(requests.count == beforePreview && device.name == "A local" && model.inspectedLibrary == macB.id)
+        model.library = savedLibrary; model.favoritesOnly = false; model.inspectedLibrary = nil
+        model.restoreForTest(baseline); drain()
+        print("PASS library recall across banks, filtered Previous/Next, duplicate suppression, mismatch recovery and Mac activation")
         model.selectEffect(106); drain()
         model.readModifierOverview(); drain()
         precondition(!model.modifierAssignments.isEmpty && !model.modifierScanning)
@@ -256,6 +345,25 @@ import UltraCore
         // An already submitted packet cannot be recalled; deferred target 149 must never send.
         device = baseline
         print("PASS disconnect cancels delayed live writes and stale gesture completion")
+        let cancelModel = EditorModel(storageRoot:directory.appendingPathComponent("cancel-navigation"),offline:true)
+        var cancelledPrograms = 0, cancelledBank = false
+        cancelModel.attachTestTransport { bytes in
+            if bytes[0] & 0xF0 == 0xB0 { cancelledBank = true; cancelModel.disconnect(); return }
+            if bytes[0] & 0xF0 == 0xC0 { cancelledPrograms += 1; return }
+            let reply = bytes[6] == 1 ? baseline.forEditBuffer() : try baseline.forStorage(slot:128)
+            DispatchQueue.main.asyncAfter(deadline:.now()+0.002) { cancelModel.receiveTestMessage(reply) }
+        }
+        cancelModel.activateDeviceSlot(128)
+        RunLoop.main.run(until:Date().addingTimeInterval(0.6))
+        precondition(cancelledBank && cancelledPrograms == 0 && !cancelModel.librarySwitching)
+        print("PASS disconnect between bank select and program change cancels delayed recall")
+        let lostModel = EditorModel(storageRoot:directory.appendingPathComponent("lost-heartbeat"),offline:true)
+        lostModel.attachTestTransport { _ in }
+        lostModel.ping()
+        precondition(lostModel.connected && lostModel.busy == 0)
+        RunLoop.main.run(until:Date().addingTimeInterval(1.7))
+        precondition(!lostModel.connected && lostModel.status.contains("Connection lost"), "Silent probes must still detect a lost connection")
+        print("PASS silent health probe still detects connection loss")
         let lab = CabinetLabModel()
         lab.source = try ImpulseResponse.readWAV(Data(contentsOf:root.appendingPathComponent("Tests/Fixtures/cab-a.wav")))
         lab.second = try ImpulseResponse.readWAV(Data(contentsOf:root.appendingPathComponent("Tests/Fixtures/cab-b.wav")))
@@ -273,6 +381,6 @@ import UltraCore
         while lab.working && Date() < namUntil { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) }
         precondition(!lab.working && lab.namReport != nil && lab.prepared?.samples.count == 1024,lab.message)
         print("PASS app model launches native NAM helper and prepares its actual response")
-        print("18 editor integration groups passed")
+        print("22 editor integration groups passed")
     }
 }

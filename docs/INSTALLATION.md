@@ -16,8 +16,8 @@ Install any driver required by your interface. AxeFX Ultra Edit Remake installs 
 
 ## Install
 
-1. Visit the [0.5.1 release](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.1).
-2. Download `AxeFX-Ultra-Edit-Remake-0.5.1-arm64.dmg`. A ZIP contains the same app if preferred.
+1. Visit the [0.5.2 release](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.2).
+2. Download `AxeFX-Ultra-Edit-Remake-0.5.2-arm64.dmg`. A ZIP contains the same app if preferred.
 3. Open the disk image and drag **AxeFX Ultra Edit Remake.app** to **Applications**.
 4. Open the copy in Applications and eject the image.
 
@@ -67,4 +67,4 @@ To uninstall, quit and move AxeFX Ultra Edit Remake.app to the Trash. Local data
 
 ### Upgrading from Ultra Edit
 
-Version 0.5.1 renames the application to **AxeFX Ultra Edit Remake**. Quit the old app, install the new one, then remove the old **Ultra Edit.app** to avoid opening the wrong version. Your library, snapshots and preferences remain in their existing locations; no data migration is required.
+Version 0.5.2 renames the application to **AxeFX Ultra Edit Remake**. Quit the old app, install the new one, then remove the old **Ultra Edit.app** to avoid opening the wrong version. Your library, snapshots and preferences remain in their existing locations; no data migration is required.

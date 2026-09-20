@@ -23,7 +23,7 @@ extension EditorModel {
         } catch { fail(error) }
     }
     func withFreshPreset(_ action: @escaping (UltraPreset)->Void) {
-        guard liveKey == nil, busy == 0 else { return }
+        guard !librarySwitching, liveKey == nil, busy == 0 else { return }
         if draftMode || inspectedLibrary != nil { if let preset = currentPreset { action(preset) }; return }
         guard canOperate else { return }
         fetchPreset { [weak self] result in do { let preset = try result.get(); self?.apply(preset); action(preset) } catch { self?.fail(error) } }
@@ -39,7 +39,7 @@ extension EditorModel {
         }
     }
     func resumeDraft() {
-        guard liveKey == nil, busy == 0, let preset = recoveredDraft?.preset else { return }
+        guard !librarySwitching, liveKey == nil, busy == 0, let preset = recoveredDraft?.preset else { return }
         draftMode = true; draftUndo = []; draftRedo = []; apply(preset); status = "Recovered offline draft"
     }
     func finishDraft() {
@@ -109,7 +109,7 @@ extension EditorModel {
     func moveSong(_ delta: Int) { if let id = selectedSong { setlist.move(id,by:delta); persistTools() } }
     func removeSong() { setlist.items.removeAll { $0.id == selectedSong }; selectedSong = nil; songNotes = ""; persistTools() }
     func loadSong() {
-        guard !draftMode, connected, busy == 0, liveKey == nil, let preset = setlist.items.first(where:{$0.id == selectedSong})?.preset else { return }
+        guard !librarySwitching, !draftMode, connected, busy == 0, liveKey == nil, let preset = setlist.items.first(where:{$0.id == selectedSong})?.preset else { return }
         restoreVerified(preset)
     }
     func exportSetlist() {

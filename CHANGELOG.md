@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.2 — Library preset navigation
+
+- Connection health checks now run silently, without periodically greying out the editor or flashing a pending-work indicator. Actual transfers and lost-connection detection keep their safeguards.
+
+- Double-click a library preset to load it on the Ultra; single-click remains an offline preview.
+- Previous/Next follows the visible search, bank, folder and favorites results, with selection highlighting and automatic scrolling.
+- Ultra entries recall their actual numbered slot with bank select/program change and full-preset readback. Mac entries load the edit buffer.
+- Save a recovery snapshot before each activation and block overlapping switches, drafts and disconnected MIDI.
+
 ## 0.5.1 — AxeFX Ultra Edit Remake
 
 - Renamed the application, Swift package, release assets and repository to AxeFX Ultra Edit Remake.

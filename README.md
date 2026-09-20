@@ -8,12 +8,12 @@
 
 Edit sounds, shape signal paths, and organize a personal library on Apple Silicon.
 
-![Version](https://img.shields.io/badge/version-0.5.1_beta-d6aa68?style=flat-square&labelColor=24272b)
+![Version](https://img.shields.io/badge/version-0.5.2_beta-d6aa68?style=flat-square&labelColor=24272b)
 ![Platform](https://img.shields.io/badge/macOS-13%2B-eeeeee?style=flat-square&labelColor=24272b)
 ![Architecture](https://img.shields.io/badge/Apple_Silicon-native_arm64-eeeeee?style=flat-square&labelColor=24272b)
 ![Built with](https://img.shields.io/badge/built_with-SwiftUI_%2B_CoreMIDI-eeeeee?style=flat-square&labelColor=24272b)
 
-**[Website](https://iamknow0ne.github.io/axefx-ultra-edit-remake/)** · **[Download 0.5.1](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.1)** · **[Getting started](docs/INSTALLATION.md)** · **[User guide](docs/USER-GUIDE.md)** · **[Feature status](docs/FEATURES.md)**
+**[Website](https://iamknow0ne.github.io/axefx-ultra-edit-remake/)** · **[Download 0.5.2](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.2)** · **[Getting started](docs/INSTALLATION.md)** · **[User guide](docs/USER-GUIDE.md)** · **[Feature status](docs/FEATURES.md)**
 
 </div>
 
@@ -32,7 +32,7 @@ AxeFX Ultra Edit Remake is an independent replacement for the legacy Axe-Edit ap
 | **Responsive controls** | Stream slider changes during a gesture, prioritize them over background reads, and verify the final value. One gesture creates one Undo step; live Redo and numeric entry are included. |
 | **Interactive signal grid** | Move blocks, swap occupied cells, drag connections, reroute cables, and undo routing edits within the Ultra's 4 × 12 topology. |
 | **Illustrated effects** | Browse original vector artwork, page controls, search parameters, pin favorites, and open modifier controls. |
-| **All 384 slots** | Browse banks A/B/C; search by slot number; read individual sounds or a whole bank; copy sounds into the Mac library, or back up complete banks as `.syx`. |
+| **All 384 slots** | Double-click to recall a slot, step through filtered results with Previous/Next, browse banks A/B/C; search by slot number; read individual sounds or a whole bank; copy sounds into the Mac library, or back up complete banks as `.syx`. |
 | **A personal library** | Import `.syx` presets or banks, search names/effects, mark favorites, preview, load into the edit buffer, and export. |
 | **Recovery and comparison** | Capture named snapshots, inspect exact changes, back up the current sound, and restore with full-preset readback. |
 
@@ -72,7 +72,7 @@ Seven modern workspace tools extend the editing workflow:
 
 ## Get connected
 
-1. Download the **arm64 DMG** from the [release page](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.1), open it, and drag **AxeFX Ultra Edit Remake** to **Applications**.
+1. Download the **arm64 DMG** from the [release page](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.2), open it, and drag **AxeFX Ultra Edit Remake** to **Applications**.
 2. Connect both MIDI cables: **interface OUT → Ultra IN**, and **Ultra OUT → interface IN**.
 3. Open **MIDI setup**, select the interface's input/output and matching MIDI channel, then choose **Connect**.
 4. Use **Back up** before experimenting. Choose a block to edit; open **Library → Ultra → Read all 384** to fetch stored sounds.

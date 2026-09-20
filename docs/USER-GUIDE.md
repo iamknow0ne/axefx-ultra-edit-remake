@@ -107,7 +107,7 @@ Choose **Back up** / **Command-S** to save a fresh `.syx` copy of the current so
 
 For hardware recall, set Slot to **0–383**, choose **Load**, and review the confirmation about replacing unsaved buffer changes. Recall sends bank-select/program-change on the configured channel.
 
-Library/setlist **Load** sends the embedded preset copy into the temporary edit buffer, with a recovery snapshot of the prior sound and verified readback. It does not overwrite a numbered slot. Audio can pause during transfer.
+**On this Mac** library and setlist **Load** send the embedded preset copy into the temporary edit buffer, with a recovery snapshot of the prior sound and verified readback. It does not overwrite a numbered slot. Audio can pause during transfer.
 
 ### Store…
 
@@ -118,6 +118,12 @@ Persistent Store was physically validated using the owner-designated **slot 300*
 ## Preset libraries
 
 Choose **Library** in the sidebar, then **Ultra** or **On this Mac**.
+
+**Previous / Next** loads the neighboring preset in the visible results. Ultra navigation follows the bank and search filter; Mac navigation follows name order, search, folder and favorites. The selected row is highlighted and scrolls into view. Navigation stops at either end. With no selected result, Next starts at the first result and Previous at the last. Clear a single-slot search to browse neighboring numbers.
+
+Each activation saves the actual current hardware sound in **Snapshots** before switching. These actions do not show a confirmation each time and do not store or overwrite numbered slots. Controls disable while loading, while editing an offline draft, and when MIDI is disconnected. Hardware switches read and verify the sound; they are not gapless performance changes.
+
+The Ultra can upgrade older preset records and initialize missing globals when recalling a stored slot. The app validates the checksummed readback's name, routing and effect instances, then displays the actual device parameters. A stored-slot recall is therefore not a byte-for-byte comparison with an older stored file. Mac-library uploads still use exact payload comparison. MIDI program mappings can redirect recalls; presets with identical names and routing cannot be distinguished by this identity check.
 
 ### Ultra: all 384 slots
 
@@ -134,7 +140,7 @@ Typing **130**, for example, jumps directly to that address even if another bank
 Once a row is read:
 
 - **Preview** displays the cached preset locally.
-- **Load** auditions it in the edit buffer with recovery/readback.
+- **Load** or **double-click the preset name** recalls the actual numbered Ultra slot, with a recovery snapshot and readback. Unread slots are read automatically.
 - **Copy to Mac library** retains a persistent local copy.
 
 The device cache lasts for the current connection and clears on disconnect. Duplicate names or identical sounds in different device slots remain separate rows.
@@ -147,7 +153,7 @@ The device cache lasts for the current connection and clears on disconnect. Dupl
 
 Use **Open .syx presets or bank…** / **Command-O** to import single presets or supported A/B/C bank files. Checksums are validated. Identical payloads are deduplicated locally, and original source files are untouched.
 
-Click an entry title to preview it. Search matches names, source and effect names. Stars and **Favorites** focus the collection. **Load** auditions a copy on the connected Ultra; **Export** writes a single `.syx`.
+Single-click an entry title to preview it; **double-click** to load it onto the connected Ultra. Search matches names, source and effect names. Stars and **Favorites** focus the collection. **Load** auditions a copy on the connected Ultra; **Export** writes a single `.syx`.
 
 Use **Workbench → Banks** for numbered local reorder/copy/swap/rename and complete bank backup/export. **On this Mac** remains a deduplicated collection with logical folders. File drop, Finder opening, recent files and top-level folder import are supported. See [Banks and files](WORKSPACES-0.5.md).
 
@@ -227,3 +233,7 @@ Data lives in **`~/Library/Application Support/Ultra Edit/`**: library and snaps
 Quit before copying the whole folder for workspace backup. Export important presets separately and retain off-machine copies. Imported originals are untouched; deleting a source file does not remove an imported copy.
 
 A corrupt archive raises an error instead of silently replacing it with an empty file. Preserve it and recover from a known-good backup. After interrupted MIDI transfer, read actual hardware state and inspect recovery snapshots before writing again. The app requires no account/cloud service and has no telemetry transport or built-in updater.
+
+### Background connection checks
+
+The editor checks the connection every five seconds when idle. These health probes do not reload presets, disable buttons or show a pending-work spinner. Operations that transfer or verify a preset still temporarily lock conflicting controls. A missing health-check reply reports a lost connection.

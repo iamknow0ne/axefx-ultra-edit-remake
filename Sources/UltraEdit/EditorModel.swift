@@ -76,6 +76,10 @@ final class EditorModel: ObservableObject {
     @Published var comparisonID: UUID?
     @Published var showComparison = false
     @Published var librarySearch = ""
+    @Published var selectedLibrarySlot: Int?
+    @Published var selectedMacPreset: UUID?
+    @Published var librarySwitching = false
+    var librarySwitchToken = UUID()
     @Published var favoritesOnly = false
     @Published var pinnedOnly = false
     @Published var pinnedControls: Set<String> = Set(UserDefaults.standard.stringArray(forKey:"pinnedControls") ?? [])
@@ -115,7 +119,7 @@ final class EditorModel: ObservableObject {
     var activeEffect: EffectDefinition? { catalog?.effect(selectedEffect) }
     var parameters: [ParameterDefinition] { (activeEffect?.parameters ?? []).filter { (selectedPage == "All" || $0.page == selectedPage) && (!pinnedOnly || pinnedControls.contains("\(selectedEffect):\($0.id)")) && (filter.isEmpty || $0.name.localizedCaseInsensitiveContains(filter) || $0.key.localizedCaseInsensitiveContains(filter)) } }
     var pages: [String] { ["All"] + (activeEffect?.parameters.map(\.page) ?? []).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } } }
-    var canEdit: Bool { !draftMode && connected && currentPreset != nil && inspectedLibrary == nil && !connecting && !gridWorking && !modifierApplying && !modifierScanning }
+    var canEdit: Bool { !librarySwitching && !draftMode && connected && currentPreset != nil && inspectedLibrary == nil && !connecting && !gridWorking && !modifierApplying && !modifierScanning }
     var canOperate: Bool { canEdit && busy == 0 && liveKey == nil && !readingDevice && !modifierScanning && !modifierApplying }
     var selectedControlsWritable: Bool { catalog?.effect(selectedEffect) != nil }
     init(storageRoot: URL? = nil, offline: Bool = false) {
@@ -134,7 +138,7 @@ final class EditorModel: ObservableObject {
             let midi = try MIDITransport(); transport = midi
             let requests = RequestQueue(sendLong: { [weak midi] bytes in guard let midi else { throw MIDIError.message("MIDI is unavailable.") }; try midi.sendSysEx(bytes) }) { [weak midi] bytes in guard let midi else { throw MIDIError.message("MIDI is unavailable.") }; try midi.send(bytes) }
             queue = requests
-            requests.onActivity = { [weak self] count in if self?.busy != count { self?.busy = count } }
+            requests.onInterfaceActivity = { [weak self] count in if self?.busy != count { self?.busy = count } }
             requests.onSent = { [weak self] bytes in self?.appendLog("TX",bytes) }
             midi.onMessage = { [weak self] bytes in self?.receive(bytes) }
             midi.onChange = { [weak self] in self?.refreshPorts() }
@@ -173,15 +177,16 @@ final class EditorModel: ObservableObject {
         } catch { connecting = false; fail(error) }
     }
     func disconnect() {
+        librarySwitchToken = UUID(); librarySwitching = false
         stopModifierScan(); modifierApplying = false
         tunerReading = nil; tunerAt = nil; tempoAt = nil; observedBPM = nil; performanceMappingConfirmed = false
         stopDeviceRead(); liveUndo = []; liveRedo = []; gridWorking = false; gridUndo = []; gridRedo = []; devicePresets = [:]
         keepAlive?.invalidate(); keepAlive = nil; cancelLiveEdit(); queue?.cancel(); transport?.disconnect(); connected = false; connecting = false
         pendingValues = []; failedValues = []; values = [:]; undoValues = []; modelUndo = nil; dirty = false; currentPreset = nil; cells = []; status = "Disconnected"
     }
-    private func ping() {
-        guard connected, busy == 0, liveKey == nil, inspectedLibrary == nil else { return }
-        request(UltraProtocol.firmware(header: header), match: { $0.count == 9 && $0[5] == 8 }) { [weak self] result in
+    func ping() {
+        guard !librarySwitching, connected, queue?.count == 0, busy == 0, liveKey == nil, inspectedLibrary == nil else { return }
+        request(UltraProtocol.firmware(header: header), priority: .background, blocksInterface: false, match: { $0.count == 9 && $0[5] == 8 }) { [weak self] result in
             guard let self else { return }
             if case .failure = result { self.disconnect(); self.status = "Connection lost • press Connect to retry." }
         }
@@ -198,10 +203,10 @@ final class EditorModel: ObservableObject {
         let bytes = try UltraProtocol.controller(cc,value:value,channel:channel)
         try transport.send(bytes); appendLog("TX",bytes)
     }
-    func request(_ bytes: [UInt8], timeout: Double = 1.5, priority: RequestQueue.Priority = .normal, match: @escaping ([UInt8])->Bool, completion: @escaping (Result<[UInt8],Error>)->Void) {
-        queue?.enqueue(.init(bytes: bytes, timeout: timeout, priority: priority, matches: match, completion: completion))
+    func request(_ bytes: [UInt8], timeout: Double = 1.5, priority: RequestQueue.Priority = .normal, blocksInterface: Bool = true, match: @escaping ([UInt8])->Bool, completion: @escaping (Result<[UInt8],Error>)->Void) {
+        queue?.enqueue(.init(bytes: bytes, timeout: timeout, priority: priority, blocksInterface: blocksInterface, matches: match, completion: completion))
     }
-    func refreshPreset() { guard !draftMode else { return }; liveUndo = []; liveRedo = []; modelUndo = nil; reloadPreset() }
+    func refreshPreset() { guard !librarySwitching, !draftMode else { return }; liveUndo = []; liveRedo = []; modelUndo = nil; reloadPreset() }
     private func reloadPreset() {
         guard connected else { return }
         stopDeviceRead(); stopModifierScan()
@@ -405,7 +410,7 @@ final class EditorModel: ObservableObject {
         editGrid(.link(GridLink(source:source,destination:destination),enabled:enabled))
     }
     func backup() {
-        guard connected, busy == 0, liveKey == nil, inspectedLibrary == nil else { return }
+        guard !librarySwitching, connected, busy == 0, liveKey == nil, inspectedLibrary == nil else { return }
         request(UltraProtocol.patch(header: header), timeout: 4, match: { $0.count == 2060 && $0[5] == 4 && $0[6] == 1 }) { [weak self] result in
             do { let preset = try UltraPreset(message: result.get()); self?.apply(preset); self?.saveFile(Data(preset.message), name: preset.name + ".syx"); self?.status = "Backup received and checksum verified." } catch { self?.fail(error) }
         }
@@ -416,12 +421,12 @@ final class EditorModel: ObservableObject {
         importFiles(panel.urls)
     }
     func inspect(_ entry: LibraryEntry) {
-        guard !draftMode, busy == 0, liveKey == nil, let preset = entry.preset else { return }
+        guard !librarySwitching, !draftMode, busy == 0, liveKey == nil, let preset = entry.preset else { return }
         inspectedLibrary = entry.id; values = [:]; apply(preset); status = "File preview • \(entry.source) • hardware unchanged"
     }
     func exportLibrary(_ entry: LibraryEntry) { guard let preset = entry.preset else { return }; saveFile(Data(preset.message),name: entry.title + ".syx") }
     func audition(_ entry: LibraryEntry) {
-        guard connected, busy == 0, liveKey == nil, let preset = entry.preset else { return }
+        guard !librarySwitching, connected, busy == 0, liveKey == nil, let preset = entry.preset else { return }
         guard confirm("Load \(entry.title) into the Ultra?", "This replaces the edit buffer. A recovery snapshot is captured first. Stored presets stay unchanged.") else { return }
         restoreVerified(preset)
     }
@@ -533,7 +538,7 @@ final class EditorModel: ObservableObject {
         }
     }
     func restoreSnapshot(_ entry: SavedPreset) {
-        guard connected, busy == 0, liveKey == nil, let preset = entry.preset else { return }
+        guard !librarySwitching, connected, busy == 0, liveKey == nil, let preset = entry.preset else { return }
         guard confirm("Restore \(entry.title)?", "Your current sound is saved as a recovery snapshot first. This changes only the edit buffer.") else { return }
         restoreVerified(preset)
     }
@@ -587,6 +592,13 @@ final class EditorModel: ObservableObject {
         if panel.runModal() == .OK, let url = panel.url { do { try data.write(to:url,options:.atomic) } catch { fail(error) } }
     }
     private func confirm(_ title: String,_ message: String) -> Bool { let alert = NSAlert(); alert.messageText = title; alert.informativeText = message; alert.addButton(withTitle:"Continue"); alert.addButton(withTitle:"Cancel"); return alert.runModal() == .alertFirstButtonReturn }
+    func sendLibraryProgram(_ bytes: [UInt8]) throws {
+#if EDITOR_TESTS
+        if let testProgramSender { try testProgramSender(bytes); return }
+#endif
+        guard let transport else { throw MIDIError.message("MIDI unavailable") }
+        try transport.send(bytes); appendLog("TX",bytes)
+    }
     private func appendLog(_ direction: String,_ bytes: [UInt8]) {
         let text = bytes.prefix(80).map { String(format:"%02X",$0) }.joined(separator:" ")
         activity.entries.append("\(logClock.string(from:Date())) \(direction) [\(bytes.count)] \(text)\(bytes.count > 80 ? " …" : "")")
@@ -594,9 +606,11 @@ final class EditorModel: ObservableObject {
     }
     func fail(_ error: Error) { errorMessage = error.localizedDescription; status = error.localizedDescription }
 #if EDITOR_TESTS
+    var testProgramSender: (([UInt8]) throws -> Void)?
     func attachTestTransport(_ sender: @escaping ([UInt8]) throws -> Void) {
+        testProgramSender = sender
         queue = RequestQueue(sendLong:sender,send:sender)
-        queue?.onActivity = { [weak self] count in if self?.busy != count { self?.busy = count } }
+        queue?.onInterfaceActivity = { [weak self] count in if self?.busy != count { self?.busy = count } }
         connected = true
     }
     func receiveTestMessage(_ bytes: [UInt8]) { receive(bytes) }

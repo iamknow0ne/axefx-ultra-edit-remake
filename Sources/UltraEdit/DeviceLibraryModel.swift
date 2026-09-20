@@ -4,7 +4,7 @@ import UltraCore
 extension EditorModel {
     func stopDeviceRead() { deviceReadToken = UUID(); readingDevice = false }
     func readDeviceSlots(_ slots: [Int] = Array(0..<384), completion: (() -> Void)? = nil) {
-        guard connected, !connecting, !gridWorking, !readingDevice, busy == 0, liveKey == nil else { return }
+        guard !librarySwitching, connected, !connecting, !gridWorking, !readingDevice, busy == 0, liveKey == nil else { return }
         let slots = slots.filter { (0..<384).contains($0) }
         guard !slots.isEmpty else { return }
         let token = UUID(); deviceReadToken = token; readingDevice = true; deviceReadCount = 0
@@ -29,9 +29,12 @@ extension EditorModel {
         next(0)
     }
     func previewDeviceSlot(_ slot: Int) {
-        guard !draftMode, !readingDevice, busy == 0 else { return }
+        guard !librarySwitching, !draftMode, !readingDevice, busy == 0 else { return }
+        selectedLibrarySlot = slot
         if let entry = devicePresets[slot] { inspect(entry) }
-        else { readDeviceSlots([slot]) }
+        else { readDeviceSlots([slot]) { [weak self] in
+            guard let self, let entry = self.devicePresets[slot] else { return }; self.inspect(entry)
+        } }
     }
     func copyDeviceSlot(_ slot: Int) {
         guard let entry = devicePresets[slot] else { return }

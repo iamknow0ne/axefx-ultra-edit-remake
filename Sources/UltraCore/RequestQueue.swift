@@ -4,13 +4,14 @@ import Foundation
 public final class RequestQueue {
     public enum Priority: Int { case background, normal, interactive }
     public struct Request {
+        let blocksInterface: Bool
         let priority: Priority
         let bytes: [UInt8]
         let timeout: TimeInterval
         let matches: ([UInt8]) -> Bool
         let completion: (Result<[UInt8], Error>) -> Void
-        public init(bytes: [UInt8], timeout: TimeInterval = 1.5, priority: Priority = .normal, matches: @escaping ([UInt8]) -> Bool, completion: @escaping (Result<[UInt8], Error>) -> Void) {
-            self.priority = priority; self.bytes = bytes; self.timeout = timeout; self.matches = matches; self.completion = completion
+        public init(bytes: [UInt8], timeout: TimeInterval = 1.5, priority: Priority = .normal, blocksInterface: Bool = true, matches: @escaping ([UInt8]) -> Bool, completion: @escaping (Result<[UInt8], Error>) -> Void) {
+            self.blocksInterface = blocksInterface; self.priority = priority; self.bytes = bytes; self.timeout = timeout; self.matches = matches; self.completion = completion
         }
     }
     private var pending: [Request] = []
@@ -19,9 +20,12 @@ public final class RequestQueue {
     private var generation = 0
     private var cooling = false
     private var coolingForeground = false
+    private var coolingBlocksInterface = false
     public let send: ([UInt8]) throws -> Void
     public let sendLong: (([UInt8]) throws -> Void)?
     public var onActivity: ((Int) -> Void)?
+    /// User-facing work only; health probes still use the serialized queue.
+    public var onInterfaceActivity: ((Int) -> Void)?
     public var onSent: (([UInt8]) -> Void)?
     private let shortGap: TimeInterval
     public var hasForegroundWork: Bool { active.map { $0.priority != .background } == true || pending.contains { $0.priority != .background } || (cooling && coolingForeground) }
@@ -36,10 +40,14 @@ public final class RequestQueue {
         finish(.success(bytes))
     }
     public func cancel() {
-        generation += 1; timer?.invalidate(); timer = nil; active = nil; pending.removeAll(); cooling = false; onActivity?(0)
+        generation += 1; timer?.invalidate(); timer = nil; active = nil; pending.removeAll(); cooling = false; notifyActivity()
+    }
+    private func notifyActivity() {
+        onActivity?(count + (cooling ? 1 : 0))
+        onInterfaceActivity?(pending.filter { $0.blocksInterface }.count + (active?.blocksInterface == true ? 1 : 0) + (cooling && coolingBlocksInterface ? 1 : 0))
     }
     private func advance() {
-        onActivity?(count + (cooling ? 1 : 0))
+        notifyActivity()
         guard active == nil, !cooling, !pending.isEmpty else { return }
         let request = pending.removeFirst(); active = request
         let token = generation
@@ -90,10 +98,11 @@ public final class RequestQueue {
         // Gen-1 reuses a transfer buffer for stored reads. An immediate patch
         // query can return that temporary preset instead of the active sound.
         let settling: TimeInterval = storedRead ? 1.0 : request.bytes.count > 256 ? 0.8 : shortGap
+        coolingBlocksInterface = request.blocksInterface
         coolingForeground = request.priority != .background || request.bytes.count > 256 || storedRead
         let token = generation
         request.completion(result)
-        onActivity?(count + (cooling ? 1 : 0))
+        notifyActivity()
         guard generation == token else { return }
         if settling == 0 {
             cooling = false; advance(); return

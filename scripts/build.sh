@@ -35,7 +35,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <key>CFBundleIconFile</key><string>UltraEdit</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$version</string>
-<key>CFBundleVersion</key><string>8</string>
+<key>CFBundleVersion</key><string>9</string>
 <key>CFBundleDocumentTypes</key><array><dict><key>CFBundleTypeName</key><string>Axe-Fx SysEx</string><key>CFBundleTypeRole</key><string>Editor</string><key>LSHandlerRank</key><string>Alternate</string><key>LSItemContentTypes</key><array><string>tech.hostin.ultra-edit.syx</string></array></dict></array>
 <key>UTImportedTypeDeclarations</key><array><dict><key>UTTypeIdentifier</key><string>tech.hostin.ultra-edit.syx</string><key>UTTypeDescription</key><string>MIDI System Exclusive</string><key>UTTypeConformsTo</key><array><string>public.data</string></array><key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>syx</string></array></dict></dict></array>
 <key>LSMinimumSystemVersion</key><string>13.0</string>

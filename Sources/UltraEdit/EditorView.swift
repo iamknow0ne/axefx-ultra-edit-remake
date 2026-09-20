@@ -34,7 +34,7 @@ struct EditorView: View {
                 Spacer()
                 if model.busy > 0 { ProgressView().controlSize(.small); Text("\(model.busy) pending").monospacedDigit() }
                 Button("MIDI log") { model.showLog.toggle() }.buttonStyle(.borderless)
-                Text("AXEFX ULTRA EDIT REMAKE  /  0.5.1").foregroundStyle(StudioTheme.muted)
+                Text("AXEFX ULTRA EDIT REMAKE  /  0.5.2").foregroundStyle(StudioTheme.muted)
             }.font(.system(size:11)).padding(.horizontal,16).frame(height:32)
         }
         .foregroundStyle(StudioTheme.text).background(StudioTheme.background)
