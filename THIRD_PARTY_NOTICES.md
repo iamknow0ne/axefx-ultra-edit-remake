@@ -12,6 +12,6 @@ No open-source license has been selected for original AxeFX Ultra Edit Remake co
 
 **Complete license texts:** [Resources/ThirdPartyNotices.txt](Resources/ThirdPartyNotices.txt), also included inside the app bundle. All vendored source retains per-file notices. This code is used by the local `nam-ir` helper; no NAM captures or trained commercial models are bundled.
 
-Corresponding third-party source is included in this repository's `Vendor/` directory and the release asset `AxeFX-Ultra-Edit-Remake-0.5.2-third-party-source.tar.gz`. Recipients of the binaries can obtain that asset from the same release page. Keep this source offering and the license notices with redistributed builds. No Eigen source modifications are introduced by AxeFX Ultra Edit Remake.
+Corresponding third-party source is included in this repository's `Vendor/` directory and the release asset `AxeFX-Ultra-Edit-Remake-0.5.3-third-party-source.tar.gz`. Recipients of the binaries can obtain that asset from the same release page. Keep this source offering and the license notices with redistributed builds. No Eigen source modifications are introduced by AxeFX Ultra Edit Remake.
 
 Developer-only packaging dependencies (`ds-store`, `mac-alias`, Python-Markdown) are installed into a local virtual environment and are not shipped inside the application. Their upstream package notices apply to their own distributions.

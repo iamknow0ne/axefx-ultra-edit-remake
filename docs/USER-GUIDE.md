@@ -237,3 +237,11 @@ A corrupt archive raises an error instead of silently replacing it with an empty
 ### Background connection checks
 
 The editor checks the connection every five seconds when idle. These health probes do not reload presets, disable buttons or show a pending-work spinner. Operations that transfer or verify a preset still temporarily lock conflicting controls. A missing health-check reply reports a lost connection.
+
+### Saved Ultra library cache
+
+Each successfully read slot is saved automatically on this Mac. You can stop a scan and keep its completed reads. On restart, the last cached library appears immediately, including names, search and offline previews. Disconnecting does not erase it. Read all 384 once; use **Refresh all 384** (or the filtered/bank Refresh button) when you want to update it. Individual live recalls and verified Store operations refresh that slot too.
+
+The library shows its cached count and last cache time. Cache profiles are separated by MIDI input/output identity, channel and protocol. This is not a hardware serial number: if you attach another Ultra to the same connection or modify presets on the front panel, refresh the cache. Loading a slot always reads and checks the actual device; cached bytes are never uploaded by Ultra-slot recall. Complete bank backups also populate the cache.
+
+The cache lives in `~/Library/Application Support/Ultra Edit/Device Cache/`, with atomic files per slot. An interrupted scan retains completed slots; an unreadable slot is skipped with a warning and can be replaced by Refresh. Cache errors do not prevent the app from reading the hardware.

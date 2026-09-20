@@ -37,6 +37,9 @@ final class EditorModel: ObservableObject {
     @Published var gridUndo: [UltraPreset] = []
     @Published var gridRedo: [UltraPreset] = []
     @Published var devicePresets: [Int: SavedPreset] = [:]
+    @Published var deviceCacheDate: Date?
+    @Published var deviceCacheWarning: String?
+    var deviceCacheProfile: DeviceCacheProfile?
     @Published var readingDevice = false
     @Published var deviceReadCount = 0
     var deviceReadToken = UUID()
@@ -129,6 +132,7 @@ final class EditorModel: ObservableObject {
         catch { errorMessage = error.localizedDescription }
         do { library = try PresetArchive.load(archiveURL("library")); snapshots = try PresetArchive.load(archiveURL("snapshots")) }
         catch { archiveWritable = false; errorMessage = error.localizedDescription }
+        restoreLastDeviceCache()
         loadProductivity(); loadOrganization(); loadModifierSettings()
         if !offline && !CommandLine.arguments.contains("--offline") { initializeMIDI() }
         else { status = "Offline • Browse the recovered Ultra controls or open a .syx preset." }
@@ -168,6 +172,7 @@ final class EditorModel: ObservableObject {
                 switch result {
                 case .success(let bytes):
                     self.connected = true; self.firmware = "\(bytes[6]).\(String(format:"%02d",bytes[7]))"; self.consecutiveTimeouts = 0
+                    self.selectDeviceCache()
                     self.status = "Axe-Fx Ultra • Firmware \(self.firmware)"; self.refreshPreset()
                     self.keepAlive?.invalidate()
                     self.keepAlive = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in self?.ping() }
@@ -180,7 +185,7 @@ final class EditorModel: ObservableObject {
         librarySwitchToken = UUID(); librarySwitching = false
         stopModifierScan(); modifierApplying = false
         tunerReading = nil; tunerAt = nil; tempoAt = nil; observedBPM = nil; performanceMappingConfirmed = false
-        stopDeviceRead(); liveUndo = []; liveRedo = []; gridWorking = false; gridUndo = []; gridRedo = []; devicePresets = [:]
+        stopDeviceRead(); liveUndo = []; liveRedo = []; gridWorking = false; gridUndo = []; gridRedo = []
         keepAlive?.invalidate(); keepAlive = nil; cancelLiveEdit(); queue?.cancel(); transport?.disconnect(); connected = false; connecting = false
         pendingValues = []; failedValues = []; values = [:]; undoValues = []; modelUndo = nil; dirty = false; currentPreset = nil; cells = []; status = "Disconnected"
     }
@@ -453,7 +458,7 @@ final class EditorModel: ObservableObject {
                         self.statusCommand(message,function: 4) { [weak self] in
                             guard let self else { return }
                             self.request(getStored,timeout: 4,match: { (try? UltraPreset.storedReply($0,requestedSlot:slot)) != nil }) { [weak self] verification in
-                                do { let stored = try UltraPreset.storedReply(verification.get(),requestedSlot:slot); guard stored.payload == preset.payload else { throw MIDIError.message("Stored preset readback differs. Original backup: \(url.path)") }; self?.dirty = false; self?.status = "Stored to \(slot) • readback verified • original backed up" } catch { self?.fail(error) }
+                                do { let stored = try UltraPreset.storedReply(verification.get(),requestedSlot:slot); guard stored.payload == preset.payload else { throw MIDIError.message("Stored preset readback differs. Original backup: \(url.path)") }; self?.cacheDevicePreset(stored,slot:slot); self?.dirty = false; self?.status = "Stored to \(slot) • readback verified • original backed up" } catch { self?.fail(error) }
                             }
                         }
                     } catch { self.fail(error) }

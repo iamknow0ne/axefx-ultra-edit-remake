@@ -231,6 +231,11 @@ import UltraCore
         precondition(model.devicePresets[383]?.preset?.storedSlot == 383 && !model.readingDevice)
         precondition(device.payload == baseline.payload && model.currentPreset?.payload == baseline.payload)
         precondition(requests.dropFirst(storedRequestStart).allSatisfy { $0[5] == 3 && $0[6] == 0 })
+        let cachedRestart = EditorModel(storageRoot:directory,offline:true)
+        precondition(cachedRestart.devicePresets.count == 7 && cachedRestart.devicePresets[383]?.preset?.storedSlot == 383, "Completed reads must survive restart")
+        let previewRequests = requests.count
+        cachedRestart.previewDeviceSlot(130)
+        precondition(cachedRestart.presetName == "Slot 130" && !cachedRestart.connected && requests.count == previewRequests, "Cached previews require no MIDI")
         model.copyDeviceSlot(130); precondition(model.library.last?.source.contains("130") == true)
         model.readDeviceSlots([1,2,3]); model.stopDeviceRead(); drain()
         precondition(storedReads == 8 && model.devicePresets[1] == nil && !model.readingDevice)
@@ -364,6 +369,28 @@ import UltraCore
         RunLoop.main.run(until:Date().addingTimeInterval(1.7))
         precondition(!lostModel.connected && lostModel.status.contains("Connection lost"), "Silent probes must still detect a lost connection")
         print("PASS silent health probe still detects connection loss")
+        let cacheRoot = directory.appendingPathComponent("cache-all")
+        let cacheModel = EditorModel(storageRoot:cacheRoot,offline:true)
+        for slot in 0..<384 {
+            cacheModel.cacheDevicePreset(try UltraPreset(message:baseline.renamed("Cached \(slot)").forStorage(slot:slot)),slot:slot)
+        }
+        let allCached = EditorModel(storageRoot:cacheRoot,offline:true)
+        precondition(allCached.devicePresets.count == 384 && allCached.deviceCacheDate != nil)
+        precondition(allCached.devicePresets[130]?.title == "Cached 130" && allCached.devicePresets[383]?.preset?.storedSlot == 383)
+        allCached.disconnect(); precondition(allCached.devicePresets.count == 384)
+        allCached.channel = 2; allCached.selectDeviceCache(); precondition(allCached.devicePresets.isEmpty, "Different MIDI connections must not reuse another profile")
+        allCached.channel = 1; allCached.selectDeviceCache(); precondition(allCached.devicePresets.count == 384)
+        let refreshed = try UltraPreset(message:baseline.renamed("Refreshed 130").forStorage(slot:130))
+        allCached.cacheDevicePreset(refreshed,slot:130)
+        precondition(EditorModel(storageRoot:cacheRoot,offline:true).devicePresets[130]?.title == "Refreshed 130")
+        let badCacheURL = allCached.deviceCacheURL(slot:5,profile:allCached.deviceCacheProfile!)
+        try Data("broken".utf8).write(to:badCacheURL)
+        let damagedCache = EditorModel(storageRoot:cacheRoot,offline:true)
+        precondition(damagedCache.devicePresets.count == 383 && damagedCache.devicePresets[5] == nil && damagedCache.deviceCacheWarning != nil)
+        damagedCache.cacheDevicePreset(try UltraPreset(message:baseline.forStorage(slot:5)),slot:5)
+        let repairedCache = EditorModel(storageRoot:cacheRoot,offline:true)
+        precondition(repairedCache.devicePresets.count == 384 && repairedCache.deviceCacheWarning == nil)
+        print("PASS all 384 cached slots persist, offline preview, connection isolation, refresh and corrupt-slot recovery")
         let lab = CabinetLabModel()
         lab.source = try ImpulseResponse.readWAV(Data(contentsOf:root.appendingPathComponent("Tests/Fixtures/cab-a.wav")))
         lab.second = try ImpulseResponse.readWAV(Data(contentsOf:root.appendingPathComponent("Tests/Fixtures/cab-b.wav")))
@@ -381,6 +408,6 @@ import UltraCore
         while lab.working && Date() < namUntil { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) }
         precondition(!lab.working && lab.namReport != nil && lab.prepared?.samples.count == 1024,lab.message)
         print("PASS app model launches native NAM helper and prepares its actual response")
-        print("22 editor integration groups passed")
+        print("23 editor integration groups passed")
     }
 }

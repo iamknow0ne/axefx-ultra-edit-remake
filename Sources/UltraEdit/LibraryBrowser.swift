@@ -54,10 +54,15 @@ struct LibraryBrowser: View {
             }.padding(.horizontal,12)
             HStack {
                 if model.readingDevice { Button("Stop",action:model.stopDeviceRead); Text("\(model.deviceReadCount) read").monospacedDigit() }
-                else { Button("Read \(slots.count == 384 ? "all 384" : String(slots.count))") { model.readDeviceSlots(slots) }.disabled(!model.canActivateLibrary); Text("\(model.devicePresets.count)/384 read").monospacedDigit() }
+                else { Button("\(model.devicePresets.isEmpty ? "Read" : "Refresh") \(slots.count == 384 ? "all 384" : String(slots.count))") { model.readDeviceSlots(slots) }.disabled(!model.canActivateLibrary); Text("\(model.devicePresets.count)/384 cached").monospacedDigit() }
                 Spacer()
             }.font(.caption).padding(.horizontal,12)
-            if !model.connected { Text("Connect to read stored presets. Reading keeps your current sound unchanged.").font(.caption).foregroundStyle(StudioTheme.muted).padding(.horizontal,12) }
+            if let date = model.deviceCacheDate {
+                Text("Last cached \(date.formatted(date:.abbreviated,time:.shortened))").font(.system(size:10)).foregroundStyle(StudioTheme.muted).padding(.horizontal,12)
+                    .help("Saved on this Mac for \(model.deviceCacheProfile?.label ?? "your MIDI connection"). Refresh after changing presets on the front panel or connecting another Ultra to the same interface.")
+            }
+            if let warning = model.deviceCacheWarning { Text(warning).font(.caption).foregroundStyle(StudioTheme.accent).padding(.horizontal,12) }
+            if !model.connected { Text(model.devicePresets.isEmpty ? "Connect to read stored presets. Reading keeps your current sound unchanged." : "Saved on this Mac. Browse offline; connect to load or refresh.").font(.caption).foregroundStyle(StudioTheme.muted).padding(.horizontal,12) }
             ScrollViewReader { proxy in
             List(slots,id:\.self) { slot in
                 let entry = model.devicePresets[slot]

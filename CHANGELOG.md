@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.3 — Persistent Ultra library
+
+- Cache every successfully read stored preset on the Mac, including partial scans and complete bank backups.
+- Restore names and offline previews at startup; keep them after disconnecting.
+- Separate caches by MIDI endpoints, channel and protocol; show the last cache time and an explicit Refresh action.
+- Refresh the cached slot after live recall or verified Store. Corrupt cache entries are isolated and can be re-read.
+
 ## 0.5.2 — Library preset navigation
 
 - Connection health checks now run silently, without periodically greying out the editor or flashing a pending-work indicator. Actual transfers and lost-connection detection keep their safeguards.

@@ -7,3 +7,5 @@ Single-click remains a preview; an exclusive double-click gesture activates the 
 Verify double-click delivery in the native app, next/previous across bank boundaries, filtered and empty lists, repeated actions while busy, transport failure, readback mismatch and disconnect during a scheduled program change.
 
 Native review passed: both buttons fit the library sidebar, double-click activates the selected row, selection scrolls into view, and the existing editor remains readable. Generated public screenshots use synthetic offline presets.
+
+The device cache adds a compact last-cached timestamp under the read/refresh row. Cached counts and the explicit Refresh label make saved data distinct from a fresh device read; offline browsing retains the same library layout.

@@ -77,7 +77,7 @@ extension EditorModel {
                     guard active() else { return }
                     do {
                         let expected = try UltraPreset.storedReply(result.get(),requestedSlot:slot)
-                        self.devicePresets[slot] = SavedPreset(preset:expected,title:expected.name.isEmpty ? "Empty preset" : nil,source:"Ultra slot \(slot) · bank \(["A","B","C"][slot/128])")
+                        self.cacheDevicePreset(expected,slot:slot)
                         try self.sendLibraryProgram(messages[0])
                         DispatchQueue.main.asyncAfter(deadline:.now()+0.06) {
                             guard active() else { return }

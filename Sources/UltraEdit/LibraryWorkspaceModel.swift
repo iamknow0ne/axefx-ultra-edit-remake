@@ -98,7 +98,7 @@ extension EditorModel {
                 guard self.deviceReadToken == token else { return }
                 do {
                     let incoming = try UltraPreset.readFile(Data(result.get())); presets += incoming
-                    for preset in incoming { if let slot = preset.storedSlot { self.devicePresets[slot] = SavedPreset(preset:preset,source:"Ultra slot \(slot)") } }
+                    for preset in incoming { if let slot = preset.storedSlot { self.cacheDevicePreset(preset,slot:slot) } }
                     self.deviceReadCount = presets.count; next(index+1)
                 } catch { self.readingDevice = false; self.fail(error) }
             }
