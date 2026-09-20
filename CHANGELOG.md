@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 — AxeFX Ultra Edit Remake
+
+- Renamed the application, Swift package, release assets and repository to AxeFX Ultra Edit Remake.
+- Added a responsive GitHub Pages landing page with real interface screenshots, direct downloads and a browsable HTML manual.
+- Kept the bundle identifier and Application Support location so existing settings, libraries and snapshots carry forward.
+- Refreshed the installer, documentation and screenshots. Hardware behavior and the 0.5.0 verification limits are unchanged.
+
 ## 0.5.0 — Bank and performance workspaces
 
 - Complete bank A/B/C and all-384 backup/export; local numbered move/copy/swap/rename and 30-step Undo/Redo.

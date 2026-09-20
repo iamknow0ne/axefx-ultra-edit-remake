@@ -4,9 +4,9 @@
 
 ## Version and scope
 
-The current release is **0.5.0 beta**. Update `VERSION`, the editor footer, bundle build number, changelog, badges/download links and release notes together. Do not claim complete legacy parity or notarization unless the relevant acceptance gate passes.
+The current release is **0.5.1 beta**. Update `VERSION`, the editor footer, bundle build number, changelog, badges/download links and release notes together. Do not claim complete legacy parity or notarization unless the relevant acceptance gate passes.
 
-The repository is private. Publishing a release does not change that visibility. Only source, original artwork, synthetic fixtures, vendor source/notices, build scripts and documentation belong in Git. Legacy installers/binaries, personal device dumps, recordings, logs and build output remain excluded.
+Publishing a release does not change repository visibility. Only source, original artwork, synthetic fixtures, vendor source/notices, build scripts and documentation belong in Git. Legacy installers/binaries, personal device dumps, recordings, logs and build output remain excluded.
 
 ## Verify a clean source tree
 
@@ -32,17 +32,17 @@ Mount the result read-only, validate both binaries, check the app version/arm64 
 
 ## Notarization gate
 
-The 0.5.0 release has **no Developer ID identity and no Apple notarization ticket**. It must be labeled as a development prerelease with explicit first-launch instructions.
+The 0.5.1 release has **no Developer ID identity and no Apple notarization ticket**. It must be labeled as a development prerelease with explicit first-launch instructions.
 
 For a future notarized release, submit the Developer ID-signed DMG using an authorized `notarytool` Keychain profile, wait for acceptance, staple the ticket, validate stapling and Gatekeeper assessment, then regenerate checksums. Never label an ad-hoc build as notarized. Test a quarantined download on a separate Mac as a separate acceptance step.
 
 ## Publish
 
-Push reviewed source to `iamknow0ne/axeedit_remake`. Tag the matching commit, create the GitHub prerelease, and attach:
+Push reviewed source to `iamknow0ne/axefx-ultra-edit-remake`. Tag the matching commit, create the GitHub prerelease, and attach:
 
-- `Ultra-Edit-VERSION-arm64.dmg`
-- `Ultra-Edit-VERSION-arm64.zip`
-- `Ultra-Edit-VERSION-third-party-source.tar.gz`
+- `AxeFX-Ultra-Edit-Remake-VERSION-arm64.dmg`
+- `AxeFX-Ultra-Edit-Remake-VERSION-arm64.zip`
+- `AxeFX-Ultra-Edit-Remake-VERSION-third-party-source.tar.gz`
 - `SHA256SUMS.txt`
 
 Release notes must link installation, the guide, changes and known limits. Verify the release is published, the tag resolves to the intended commit, all assets exist, and a downloaded asset matches its local SHA-256. Keep source-license choice and repository visibility unchanged unless the owner requests otherwise.

@@ -569,6 +569,7 @@ final class EditorModel: ObservableObject {
         if let original { perform(.success(original)) } else { fetchPreset(perform) }
     }
     func archiveURL(_ name: String) -> URL {
+        // Keep the pre-rename storage path so existing libraries and snapshots remain available.
         let root = storageRoot ?? FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("Ultra Edit")
         return root.appendingPathComponent(name + ".json")
     }
@@ -576,7 +577,7 @@ final class EditorModel: ObservableObject {
         guard archiveWritable else { throw MIDIError.message("The existing archive could not be read; it will not be overwritten. Resolve the archive error before saving presets.") }
         try PresetArchive.save(entries,to:archiveURL(name))
     }
-    func exportLog() { saveFile(Data(log.joined(separator:"\n").utf8),name:"Ultra-Edit-MIDI-log.txt") }
+    func exportLog() { saveFile(Data(log.joined(separator:"\n").utf8),name:"AxeFX-Ultra-Edit-Remake-MIDI-log.txt") }
     private func backupDirectory() throws -> URL {
         let dir = archiveURL("library").deletingLastPathComponent().appendingPathComponent("Backups")
         try FileManager.default.createDirectory(at: dir,withIntermediateDirectories:true); return dir

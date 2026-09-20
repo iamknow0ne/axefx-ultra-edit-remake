@@ -30,7 +30,7 @@ Click the grid to give it keyboard focus. Arrow keys select neighbouring cells. 
 
 ## Files and library folders
 
-Use **Open SysEx…**, drop `.syx` files on the editor, or open a registered `.syx` document in Finder. Import goes into **On this Mac** without loading hardware. Duplicate sounds are skipped. Invalid file batches do not partially import. The app registers as an alternate handler; use Finder's **Open With → Ultra Edit** if another app is the default.
+Use **Open SysEx…**, drop `.syx` files on the editor, or open a registered `.syx` document in Finder. Import goes into **On this Mac** without loading hardware. Duplicate sounds are skipped. Invalid file batches do not partially import. The app registers as an alternate handler; use Finder's **Open With → AxeFX Ultra Edit Remake** if another app is the default.
 
 **File → Recent files** remembers the last 12 paths; moved files need to be opened again. **Import folder…** imports the top level of a folder containing 1–512 `.syx` files. The local library folder menu filters logical groups; create a folder there, then use a preset's context menu to assign it. These groups do not move or delete the original files. Device slots retain their numbers even when names/sounds repeat.
 

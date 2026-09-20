@@ -5,7 +5,7 @@ import AppKit
 struct UltraEditApp: App {
     @StateObject private var model = EditorModel()
     var body: some Scene {
-        WindowGroup("Ultra Edit") {
+        WindowGroup("AxeFX Ultra Edit Remake") {
             EditorView(model: model)
                 .onOpenURL { model.importFiles([$0]) }
                 .frame(minWidth: 1120, minHeight: 840)

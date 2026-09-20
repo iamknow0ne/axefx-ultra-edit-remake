@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191e20">
+  <title>AxeFX Ultra Edit Remake — Your Ultra, back at your fingertips.</title>
+  <meta name="description" content="A native Apple Silicon editor for the original Axe-Fx Ultra. Build signal paths, edit sounds, organize all 384 presets and experiment with Cabinet Lab. Independent development beta.">
+  <link rel="canonical" href="@@SITE_URL@@">
+  <meta property="og:title" content="AxeFX Ultra Edit Remake">
+  <meta property="og:description" content="Your Ultra, back at your fingertips. A native Apple Silicon workspace for the original Axe-Fx Ultra.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="@@SITE_URL@@">
+  <meta property="og:image" content="@@SITE_URL@@images/editor.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="images/icon.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead wrap">
+  <a class="identity" href="./" aria-label="AxeFX Ultra Edit Remake home"><img src="images/icon.png" width="44" height="44" alt=""><span>AxeFX Ultra Edit<span class="brand-sub">REMAKE</span></span></a>
+  <nav aria-label="Main"><a href="#workspace">Workspace</a><a href="manual/docs/USER-GUIDE.html">Manual <span aria-hidden="true">↗</span></a><a href="@@REPO_URL@@">GitHub <span aria-hidden="true">↗</span></a></nav>
+</header>
+<main id="main">
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <div class="hero-title"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> ORIGINAL AXE-FX ULTRA · NATIVE MAC APP</p><h1 id="hero-title">Your Ultra.<br>Back at your<br><em>fingertips.</em></h1></div>
+    <div class="hero-copy"><p class="intro">A familiar rack.<br>A new place to make it yours.</p><p>Edit your sound, draw your signal path and bring your entire preset collection together on Apple Silicon.</p><a class="button primary" href="@@DOWNLOAD_URL@@"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Download for macOS <span class="file-type">.dmg</span></a><p class="download-meta">v@@VERSION@@ beta · Apple Silicon · macOS 13+</p><p class="small">Independent software, not Apple-notarized.<br><a href="manual/docs/INSTALLATION.html#first-launch">Read the first-launch guide</a> · <a href="@@REPO_URL@@/releases/tag/v@@VERSION@@">ZIP & release notes</a></p></div>
+  </section>
+  <section class="showcase wrap" id="workspace" aria-labelledby="workspace-title">
+    <div class="section-line"><h2 id="workspace-title">A workspace built around your signal.</h2><span class="mono">01 / THE EDITOR</span></div>
+    <div class="viewer">
+      <div class="view-controls" role="group" aria-label="Choose a screenshot">
+        <button type="button" aria-pressed="true" data-view="editor">Signal grid</button>
+        <button type="button" aria-pressed="false" data-view="library">Preset library</button>
+        <button type="button" aria-pressed="false" data-view="bank-workspace">Bank workspace</button>
+        <button type="button" aria-pressed="false" data-view="cabinet-lab">Cabinet Lab</button>
+        <a id="full-image" href="images/editor.png" aria-label="Open full-size screenshot">Full size <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="screen-stage"><img id="workspace-image" src="images/editor.png" width="1440" height="960" fetchpriority="high" alt="Signal grid with illustrated effect blocks and the Amp parameter inspector."></div>
+    </div>
+    <div class="caption"><p id="view-caption" aria-live="polite">Move blocks. Draw connections. Dial in the details.</p><span>Actual interface · synthetic demonstration presets</span></div>
+  </section>
+  <section class="workflows wrap" aria-labelledby="workflow-title">
+    <div class="section-intro"><p class="eyebrow">02 / FROM IDEA TO SOUND</p><h2 id="workflow-title">Less managing.<br><em>More playing.</em></h2><p>The detail of the original hardware, with the comforts of a modern Mac workspace.</p><a class="text-link" href="manual/docs/FEATURES.html">Explore every feature & its status <span aria-hidden="true">↗</span></a></div>
+    <div class="ledger">
+      <article><span class="number">01</span><div><h3>Follow the signal</h3><p>Drag blocks, swap positions and draw cables across the Ultra’s 4 × 12 grid. Illustrated effects make a complex rig easier to read.</p><span class="feature-detail">Routing undo · effect clipboard · keyboard navigation</span></div></article>
+      <article><span class="number">02</span><div><h3>Get closer to the controls</h3><p>Sliders send changes as you move them. Enter exact values, undo a gesture, and keep your favorite parameters within reach.</p><span class="feature-detail">Live editing · redo · reusable modifier shapes</span></div></article>
+      <article><span class="number">03</span><div><h3>Keep every sound in reach</h3><p>All 384 slots, across banks A, B and C. Back up banks, organize a local collection and arrange sounds in a numbered workspace.</p><span class="feature-detail">Bank export · favorites · drag-and-drop SysEx import</span></div></article>
+      <article><span class="number">04</span><div><h3>Leave room for another version</h3><p>Build an offline draft, capture a snapshot or compare changes before committing. Take song notes and preset copies into a portable setlist.</p><span class="feature-detail">Autosaved drafts · snapshots · setlists · rig sheets</span></div></article>
+      <article><span class="number">05</span><div><h3>Make space for experiments</h3><p>Trim and blend cabinet impulses, audition a WAV, or extract a NAM model’s small-signal filtering locally in Cabinet Lab.</p><span class="feature-detail">An IR captures filtering, not NAM distortion or dynamics.</span><a class="text-link" href="manual/docs/CABINET-LAB.html">Inside Cabinet Lab <span aria-hidden="true">↗</span></a></div></article>
+    </div>
+  </section>
+  <section class="connection" aria-labelledby="connection-title"><div class="wrap connection-inner">
+    <div><p class="eyebrow">03 / PLUG IN BOTH DIRECTIONS</p><h2 id="connection-title">Your Mac.<br>Your interface.<br><em>Your Ultra.</em></h2><p>Connect the two MIDI cables, choose your ports, and start with a backup of your sound.</p><a class="button light" href="manual/docs/INSTALLATION.html">Set up your connection <span aria-hidden="true">↗</span></a></div>
+    <div class="wiring" aria-label="Connect interface MIDI OUT to Ultra MIDI IN and Ultra MIDI OUT to interface MIDI IN"><div class="wiring-head"><span>MIDI INTERFACE</span><span>AXE-FX ULTRA</span></div><div class="wire"><span>OUT</span><span class="wire-line" aria-hidden="true">→</span><span>IN</span></div><div class="wire reverse"><span>IN</span><span class="wire-line" aria-hidden="true">←</span><span>OUT</span></div><p>A flashing tempo light confirms one direction.<br>The editor needs the return path, too.</p></div>
+  </div></section>
+  <section class="details wrap" aria-labelledby="details-title"><div><p class="eyebrow">04 / BEFORE YOU DOWNLOAD</p><h2 id="details-title">Built for a classic.<br><em>Still being refined.</em></h2><p>This is an independent development beta for the first-generation Axe-Fx Ultra. The manual records what works, what was tested and what remains experimental.</p><a class="text-link" href="manual/docs/PARITY-1.0.191.html">Read the legacy feature audit <span aria-hidden="true">↗</span></a></div><dl><div><dt>The Mac</dt><dd>Apple Silicon. macOS 13 or later is the build target; hardware testing used macOS 27.0.</dd></div><div><dt>The hardware</dt><dd>Axe-Fx Ultra, tested on firmware 11.00 through a Clarett 8Pre. Standard, II, III and FM devices are outside scope.</dd></div><div><dt>The evidence</dt><dd>Preset reads, representative edits, bank backup and Store/restore were tested on hardware. Tuner, tempo commands and direct cabinet transfer still need hardware validation. <a href="manual/docs/VERIFICATION-0.5.0.html">Read the test record.</a></dd></div><div><dt>Your workspace</dt><dd>Local library, snapshots and drafts. No account or cloud service required. Existing Ultra Edit data stays in place after the rename.</dd></div><div><dt>The release</dt><dd>Ad-hoc signed, not Apple-notarized. Follow the first-launch guide. Firmware updating is deliberately excluded.</dd></div></dl></section>
+  <section class="closing wrap"><div><p class="eyebrow">KEEP A GOOD RACK IN PLAY.</p><h2>Give your Ultra<br>a new workspace.</h2></div><a class="button primary" href="@@DOWNLOAD_URL@@">Download v@@VERSION@@ <span aria-hidden="true">↓</span></a></section>
+</main>
+<footer class="wrap"><div class="footer-top"><span class="footer-brand">AxeFX Ultra Edit Remake</span><nav aria-label="Footer"><a href="manual/docs/USER-GUIDE.html">User guide</a><a href="manual/docs/TROUBLESHOOTING.html">Troubleshooting</a><a href="@@REPO_URL@@/issues">Report an issue</a><a href="@@REPO_URL@@">Source</a></nav></div><p>Independent software. Not affiliated with or endorsed by Fractal Audio Systems. Axe-Fx and Axe-Edit identify compatible devices and formats.</p><p>Original interface artwork. No factory or personal presets distributed. <a href="manual/THIRD_PARTY_NOTICES.html">Credits & licenses</a>.</p></footer>
+</body>
+</html>

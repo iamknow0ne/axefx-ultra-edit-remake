@@ -1,27 +1,27 @@
 <div align="center">
 
-<img src="docs/images/icon.png" width="112" alt="Ultra Edit application icon">
+<img src="docs/images/icon.png" width="112" alt="AxeFX Ultra Edit Remake application icon">
 
-# Ultra Edit
+# AxeFX Ultra Edit Remake
 
 ### Your Axe-Fx Ultra. A native Mac workspace.
 
 Edit sounds, shape signal paths, and organize a personal library on Apple Silicon.
 
-![Version](https://img.shields.io/badge/version-0.5.0_beta-d6aa68?style=flat-square&labelColor=24272b)
+![Version](https://img.shields.io/badge/version-0.5.1_beta-d6aa68?style=flat-square&labelColor=24272b)
 ![Platform](https://img.shields.io/badge/macOS-13%2B-eeeeee?style=flat-square&labelColor=24272b)
 ![Architecture](https://img.shields.io/badge/Apple_Silicon-native_arm64-eeeeee?style=flat-square&labelColor=24272b)
 ![Built with](https://img.shields.io/badge/built_with-SwiftUI_%2B_CoreMIDI-eeeeee?style=flat-square&labelColor=24272b)
 
-**[Download 0.5.0](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.5.0)** · **[Getting started](docs/INSTALLATION.md)** · **[User guide](docs/USER-GUIDE.md)** · **[Feature status](docs/FEATURES.md)**
+**[Website](https://iamknow0ne.github.io/axefx-ultra-edit-remake/)** · **[Download 0.5.1](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.1)** · **[Getting started](docs/INSTALLATION.md)** · **[User guide](docs/USER-GUIDE.md)** · **[Feature status](docs/FEATURES.md)**
 
 </div>
 
-![Ultra Edit signal grid and Amp inspector](docs/images/editor.png)
+![AxeFX Ultra Edit Remake signal grid and Amp inspector](docs/images/editor.png)
 
 *The production interface, rendered with synthetic offline demonstration data. No factory or personal presets are distributed.*
 
-Ultra Edit is an independent replacement for the legacy Axe-Edit application, built specifically for the **first-generation Axe-Fx Ultra**. It runs natively on Apple Silicon, with illustrated effect blocks, direct MIDI editing, and a local workspace for sounds and experiments.
+AxeFX Ultra Edit Remake is an independent replacement for the legacy Axe-Edit application, built specifically for the **first-generation Axe-Fx Ultra**. It runs natively on Apple Silicon, with illustrated effect blocks, direct MIDI editing, and a local workspace for sounds and experiments.
 
 **Development beta:** the download is ad-hoc signed, **not Apple-notarized**. Read the [first-launch instructions](docs/INSTALLATION.md#first-launch). Real-device testing used an Ultra on firmware 11.00 through a Clarett 8Pre, on macOS 27.0. The macOS 13+ deployment target does not mean every OS, firmware, or interface combination has been tested. Full legacy feature parity is not yet complete.
 
@@ -72,7 +72,7 @@ Seven modern workspace tools extend the editing workflow:
 
 ## Get connected
 
-1. Download the **arm64 DMG** from the [release page](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.5.0), open it, and drag **Ultra Edit** to **Applications**.
+1. Download the **arm64 DMG** from the [release page](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.1), open it, and drag **AxeFX Ultra Edit Remake** to **Applications**.
 2. Connect both MIDI cables: **interface OUT → Ultra IN**, and **Ultra OUT → interface IN**.
 3. Open **MIDI setup**, select the interface's input/output and matching MIDI channel, then choose **Connect**.
 4. Use **Back up** before experimenting. Choose a block to edit; open **Library → Ultra → Read all 384** to fetch stored sounds.
@@ -120,4 +120,4 @@ Independent software; not affiliated with or endorsed by Fractal Audio Systems. 
 
 The offline helper uses [NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore), [Eigen](https://eigen.tuxfamily.org/), and [nlohmann/json](https://github.com/nlohmann/json). Their licenses and source are included; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-No open-source license has yet been selected for the original application code. Dependencies retain their own licenses. Repository and release visibility remain private.
+No open-source license has yet been selected for the original application code. Dependencies retain their own licenses.

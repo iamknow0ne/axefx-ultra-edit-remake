@@ -34,7 +34,7 @@ struct EditorView: View {
                 Spacer()
                 if model.busy > 0 { ProgressView().controlSize(.small); Text("\(model.busy) pending").monospacedDigit() }
                 Button("MIDI log") { model.showLog.toggle() }.buttonStyle(.borderless)
-                Text("ULTRA EDIT  /  0.5.0").foregroundStyle(StudioTheme.muted)
+                Text("AXEFX ULTRA EDIT REMAKE  /  0.5.1").foregroundStyle(StudioTheme.muted)
             }.font(.system(size:11)).padding(.horizontal,16).frame(height:32)
         }
         .foregroundStyle(StudioTheme.text).background(StudioTheme.background)
@@ -43,7 +43,7 @@ struct EditorView: View {
             for provider in providers { _ = provider.loadObject(ofClass:URL.self) { url,_ in if let url { DispatchQueue.main.async { model.importFiles([url]) } } } }
             return !providers.isEmpty
         }
-        .alert("Ultra Edit",isPresented:Binding(get:{ model.errorMessage != nil },set:{ if !$0 { model.errorMessage = nil } })) { Button("OK") { model.errorMessage = nil } } message: { Text(model.errorMessage ?? "") }
+        .alert("AxeFX Ultra Edit Remake",isPresented:Binding(get:{ model.errorMessage != nil },set:{ if !$0 { model.errorMessage = nil } })) { Button("OK") { model.errorMessage = nil } } message: { Text(model.errorMessage ?? "") }
         .sheet(isPresented:$model.showWorkbench) { WorkbenchView(model:model) }
         .sheet(isPresented:Binding(get:{ model.modifierTarget != nil },set:{ if !$0 { model.modifierTarget = nil } })) { ModifierView(model:model) }
     }
@@ -51,8 +51,11 @@ struct EditorView: View {
         HStack(spacing:16) {
             HStack(spacing:10) {
                 Image(systemName:"waveform.path").font(.system(size:22)).foregroundStyle(StudioTheme.accent)
-                Text("ULTRA EDIT").font(.system(size:14,weight:.bold)).tracking(2)
-            }.frame(width:190,alignment:.leading)
+                VStack(alignment:.leading,spacing:2) {
+                    Text("AXEFX ULTRA EDIT").font(.system(size:12,weight:.bold)).tracking(1)
+                    Text("REMAKE").font(.system(size:9,weight:.medium)).tracking(2).foregroundStyle(StudioTheme.muted)
+                }
+            }.frame(width:200,alignment:.leading)
             Circle().fill(model.connected ? Color.green : StudioTheme.muted).frame(width:6,height:6)
             Text(model.connected ? "AXE-FX ULTRA  ·  FW \(model.firmware)" : "AXE-FX ULTRA").font(.system(size:11,weight:.medium)).tracking(0.5)
             Spacer()

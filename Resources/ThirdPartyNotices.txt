@@ -1,4 +1,4 @@
-Ultra Edit third-party notices
+AxeFX Ultra Edit Remake third-party notices
 See THIRD_PARTY_NOTICES.md and the corresponding source archive in the release.
 
 NeuralAmpModelerCore — 1f42f88535884450104b8711d7595019afa0495b

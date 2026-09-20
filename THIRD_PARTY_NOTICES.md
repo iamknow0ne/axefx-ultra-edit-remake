@@ -1,8 +1,8 @@
 # Third-party notices and source
 
-Ultra Edit is independent of Fractal Audio Systems. Axe-Fx and Axe-Edit identify the supported hardware/software formats, not endorsement. The interoperability catalog was recovered from the user-supplied Axe-Edit 1.0.191 metadata. The proprietary installer, executable, manuals and factory banks are not distributed here. The UI artwork is original generic illustration.
+AxeFX Ultra Edit Remake is independent of Fractal Audio Systems. Axe-Fx and Axe-Edit identify the supported hardware/software formats, not endorsement. The interoperability catalog was recovered from the user-supplied Axe-Edit 1.0.191 metadata. The proprietary installer, executable, manuals and factory banks are not distributed here. The UI artwork is original generic illustration.
 
-No open-source license has been selected for original Ultra Edit code. This does not alter any third-party license below.
+No open-source license has been selected for original AxeFX Ultra Edit Remake code. This does not alter any third-party license below.
 
 | Component | Source / revision | License and location |
 | --- | --- | --- |
@@ -12,6 +12,6 @@ No open-source license has been selected for original Ultra Edit code. This does
 
 **Complete license texts:** [Resources/ThirdPartyNotices.txt](Resources/ThirdPartyNotices.txt), also included inside the app bundle. All vendored source retains per-file notices. This code is used by the local `nam-ir` helper; no NAM captures or trained commercial models are bundled.
 
-Corresponding third-party source is included in this repository's `Vendor/` directory and the release asset `Ultra-Edit-0.4.1-third-party-source.tar.gz`. Recipients of the binaries can obtain that asset from the same release page. Keep this source offering and the license notices with redistributed builds. No Eigen source modifications are introduced by Ultra Edit.
+Corresponding third-party source is included in this repository's `Vendor/` directory and the release asset `AxeFX-Ultra-Edit-Remake-0.5.1-third-party-source.tar.gz`. Recipients of the binaries can obtain that asset from the same release page. Keep this source offering and the license notices with redistributed builds. No Eigen source modifications are introduced by AxeFX Ultra Edit Remake.
 
 Developer-only packaging dependencies (`ds-store`, `mac-alias`, Python-Markdown) are installed into a local virtual environment and are not shipped inside the application. Their upstream package notices apply to their own distributions.

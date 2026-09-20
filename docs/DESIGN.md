@@ -1,4 +1,4 @@
-# Ultra Edit design
+# AxeFX Ultra Edit Remake design
 
 A native macOS utility for the Axe-Fx Ultra: select a block in the 4 × 12 hardware grid, read its controls, edit, and back up a preset. High information density and accurate device state take priority.
 

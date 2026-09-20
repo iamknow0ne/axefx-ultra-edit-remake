@@ -22,7 +22,7 @@ python3 scripts/test-nam.py
 python3 scripts/check-docs.py
 ```
 
-The build creates `dist/Ultra Edit.app` and a versioned arm64 ZIP. `APP_PATH` can choose a different bundle destination, useful when an older copy is running. `SIGN_IDENTITY` defaults to ad-hoc `-`; see [release process](docs/RELEASING.md) for Developer ID signing.
+The build creates `dist/AxeFX Ultra Edit Remake.app` and a versioned arm64 ZIP. `APP_PATH` can choose a different bundle destination, useful when an older copy is running. `SIGN_IDENTITY` defaults to ad-hoc `-`; see [release process](docs/RELEASING.md) for Developer ID signing.
 
 The core suite runs 25 groups using a small assertion adapter, so full Xcode/XCTest is not required. The 18 editor groups use an in-process simulated transport with readback mismatch, stale state and cancellation cases; they also launch the real NAM helper. NAM tests use actual Linear, WaveNet and LSTM inference and an analytical linear response. No test in these three suites opens physical MIDI ports or writes hardware.
 
@@ -57,3 +57,7 @@ Packaging creates a Finder-layout DMG with app, Applications shortcut, offline H
 Preserve unknown preset bytes. Never call an ACK a successful write without independent readback. Keep model-selector GETs and unvalidated global controls out of live query paths. Retain coalescing, request identity, cancellation and the post-upload settling interval. Do not place model inference or audio rendering on the MIDI/UI edit path.
 
 Document behavior and evidence limits, not just implemented controls. Add focused tests for protocol/state-machine changes. Do not commit original installers, extracted proprietary binaries, personal presets, captures, keys, logs or generated build products. Keep third-party license notices and pinned source intact.
+
+## Landing page
+
+See [Website & GitHub Pages](docs/WEBSITE.md) for the static site build, local preview and deployment. The website uses the same documentation and original screenshots as the installer.

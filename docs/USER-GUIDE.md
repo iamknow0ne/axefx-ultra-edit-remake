@@ -1,4 +1,4 @@
-# Ultra Edit user guide
+# AxeFX Ultra Edit Remake user guide
 
 [Documentation index](README.md) · [Connect](INSTALLATION.md) · [Troubleshooting](TROUBLESHOOTING.md)
 

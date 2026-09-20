@@ -12,13 +12,13 @@
 | MIDI | macOS-compatible interface supporting bidirectional SysEx, plus two MIDI cables |
 | Internet | Download only; editing and Cabinet Lab run locally |
 
-Install any driver required by your interface. Ultra Edit installs no driver, kernel extension, service, or system-wide MIDI router. Intel Macs and other Axe-Fx/FM models are outside this release's target.
+Install any driver required by your interface. AxeFX Ultra Edit Remake installs no driver, kernel extension, service, or system-wide MIDI router. Intel Macs and other Axe-Fx/FM models are outside this release's target.
 
 ## Install
 
-1. Visit the [0.5.0 release](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.5.0). Access requires permission to the private repository.
-2. Download `Ultra-Edit-0.5.0-arm64.dmg`. A ZIP contains the same app if preferred.
-3. Open the disk image and drag **Ultra Edit.app** to **Applications**.
+1. Visit the [0.5.1 release](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.1).
+2. Download `AxeFX-Ultra-Edit-Remake-0.5.1-arm64.dmg`. A ZIP contains the same app if preferred.
+3. Open the disk image and drag **AxeFX Ultra Edit Remake.app** to **Applications**.
 4. Open the copy in Applications and eject the image.
 
 The DMG includes offline documentation. `SHA256SUMS.txt` on the release page covers all distributable files. Developers can verify with `shasum -a 256 -c SHA256SUMS.txt` in a directory containing all the listed assets.
@@ -27,7 +27,7 @@ The DMG includes offline documentation. `SHA256SUMS.txt` on the release page cov
 
 **This beta is ad-hoc signed, not Apple-notarized.** Ad-hoc signing checks bundle integrity; it does not establish a Developer ID identity. A downloaded copy may be blocked on first launch.
 
-After attempting to open it, if you trust this release, go to **System Settings → Privacy & Security**, find the Ultra Edit message, choose **Open Anyway**, and confirm. See [Apple's official instructions](https://support.apple.com/en-gb/102445). Managed Macs may prevent exceptions. Do not disable Gatekeeper globally. Do not override a malware warning or use a download whose checksum fails.
+After attempting to open it, if you trust this release, go to **System Settings → Privacy & Security**, find the AxeFX Ultra Edit Remake message, choose **Open Anyway**, and confirm. See [Apple's official instructions](https://support.apple.com/en-gb/102445). Managed Macs may prevent exceptions. Do not disable Gatekeeper globally. Do not override a malware warning or use a download whose checksum fails.
 
 There is no microphone/audio-input capture workflow. Cabinet audition plays imported files through the Mac's current audio output.
 
@@ -63,4 +63,8 @@ The device cache lasts for the current connection. Copy wanted sounds to **On th
 
 Finish any gesture/transfer, back up the sound, and quit before replacing the app with a new release. Local data lives separately in `~/Library/Application Support/Ultra Edit/`. Back up that folder before beta updates; there is no automatic updater or guaranteed future experimental-format migration.
 
-To uninstall, quit and move Ultra Edit.app to the Trash. Local data remains. Delete Application Support records only if you intend to remove your library, snapshots and drafts. Preferences use `tech.hostin.ultra-edit`. Removing the app does not change hardware presets.
+To uninstall, quit and move AxeFX Ultra Edit Remake.app to the Trash. Local data remains. Delete Application Support records only if you intend to remove your library, snapshots and drafts. Preferences use `tech.hostin.ultra-edit`. Removing the app does not change hardware presets.
+
+### Upgrading from Ultra Edit
+
+Version 0.5.1 renames the application to **AxeFX Ultra Edit Remake**. Quit the old app, install the new one, then remove the old **Ultra Edit.app** to avoid opening the wrong version. Your library, snapshots and preferences remain in their existing locations; no data migration is required.

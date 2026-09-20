@@ -40,7 +40,7 @@ public final class MIDITransport {
     public var onBytes: (([UInt8]) -> Void)?
     public var onChange: (() -> Void)?
     public init() throws {
-        try check(MIDIClientCreateWithBlock("Ultra Edit" as CFString, &client) { [weak self] _ in
+        try check(MIDIClientCreateWithBlock("AxeFX Ultra Edit Remake" as CFString, &client) { [weak self] _ in
             DispatchQueue.main.async { self?.onChange?() }
         })
         try check(MIDIInputPortCreateWithBlock(client, "Ultra In" as CFString, &input) { [weak self] list, _ in

@@ -17,6 +17,6 @@ with DSStore.open(str(volume/'.DS_Store'), 'w+') as store:
     store['.']['bwsp'] = {'ShowStatusBar':False,'ShowToolbar':False,'ShowSidebar':False,'ShowPathbar':False,'ContainerShowSidebar':False,'WindowBounds':'{{180, 140}, {720, 630}}','PreviewPaneVisibility':False}
     store['.']['icvp'] = {'viewOptionsVersion':1,'backgroundType':2,'backgroundImageAlias':background,'backgroundColorRed':1.0,'backgroundColorGreen':1.0,'backgroundColorBlue':1.0,'iconSize':96.0,'textSize':13.0,'gridSpacing':100.0,'gridOffsetX':0.0,'gridOffsetY':0.0,'scrollPositionX':0.0,'scrollPositionY':0.0,'labelOnBottom':True,'showItemInfo':False,'showIconPreview':True,'arrangeBy':'none'}
     store['.']['vstl'] = ('type', 'icnv')
-    for name, position in [('Ultra Edit.app',(190,245)),('Applications',(530,245)),('Documentation',(190,420)),('Install Ultra Edit.html',(530,420))]:
+    for name, position in [('AxeFX Ultra Edit Remake.app',(190,245)),('Applications',(530,245)),('Documentation',(190,420)),('Installation.html',(530,420))]:
         store[name]['Iloc'] = position
 print('Wrote Finder window, background and icon positions')

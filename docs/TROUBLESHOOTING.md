@@ -12,7 +12,7 @@ An incoming tempo light proves only one MIDI direction. Check **interface OUT â†
 
 ## Interface missing or connection lost
 
-Disconnect in Ultra Edit, reconnect the interface, then **Refresh ports** and reselect endpoints. Confirm the manufacturer's current driver supports your Mac. Finish/cancel pending activity before reconnecting. A timeout is not proof that an already transmitted write had no effect: read the current buffer afterward.
+Disconnect in AxeFX Ultra Edit Remake, reconnect the interface, then **Refresh ports** and reselect endpoints. Confirm the manufacturer's current driver supports your Mac. Finish/cancel pending activity before reconnecting. A timeout is not proof that an already transmitted write had no effect: read the current buffer afterward.
 
 ## Preset 130 or bank C is missing
 
