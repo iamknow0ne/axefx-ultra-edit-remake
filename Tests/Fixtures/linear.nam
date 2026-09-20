@@ -1,0 +1,18 @@
+{
+  "version": "0.5.4",
+  "architecture": "Linear",
+  "config": {
+    "receptive_field": 3,
+    "bias": true
+  },
+  "weights": [
+    0.25,
+    -0.5,
+    1.0,
+    0.1
+  ],
+  "sample_rate": 48000,
+  "metadata": {
+    "name": "Synthetic test network"
+  }
+}

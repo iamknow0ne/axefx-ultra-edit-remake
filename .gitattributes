@@ -1,0 +1,7 @@
+Vendor/** linguist-vendored=true -whitespace
+Resources/ThirdPartyNotices.txt -whitespace
+*.syx binary
+*.nam -diff
+*.wav binary
+*.png binary
+*.icns binary

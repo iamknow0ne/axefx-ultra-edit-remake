@@ -1,0 +1,14 @@
+.build/
+dist/
+research/
+evidence/
+*.dmg
+.DS_Store
+.swiftpm/
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+*.p12
+*.mobileprovision

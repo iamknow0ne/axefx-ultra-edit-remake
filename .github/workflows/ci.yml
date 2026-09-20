@@ -1,0 +1,29 @@
+name: Source checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: source-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select installed developer tools
+        run: echo "DEVELOPER_DIR=$(xcode-select -p)" >> "$GITHUB_ENV"
+      - name: Build native application and NAM helper
+        run: ./scripts/build.sh
+      - name: Core software checks
+        run: ./scripts/test.sh
+      - name: Editor integration checks (simulated MIDI only)
+        run: ./scripts/test-editor.sh
+      - name: Actual NAM inference checks
+        run: python3 scripts/test-nam.py
+      - name: Documentation links and version
+        run: python3 scripts/check-docs.py
