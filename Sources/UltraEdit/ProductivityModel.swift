@@ -4,9 +4,9 @@ import UniformTypeIdentifiers
 
 extension EditorModel {
     var canEditDraft: Bool { draftMode && currentPreset != nil }
-    var hasUndo: Bool { draftMode ? !draftUndo.isEmpty : canOperate && (!undoValues.isEmpty || modelUndo != nil || !gridUndo.isEmpty) }
-    var hasRedo: Bool { draftMode ? !draftRedo.isEmpty : canEditGrid && !gridRedo.isEmpty }
-    func redoChange() { if draftMode { redoDraft() } else { redoGrid() } }
+    var hasUndo: Bool { draftMode ? !draftUndo.isEmpty : canOperate && (!liveUndo.isEmpty || !undoValues.isEmpty || modelUndo != nil || !gridUndo.isEmpty) }
+    var hasRedo: Bool { draftMode ? !draftRedo.isEmpty : canOperate && (!liveRedo.isEmpty || !gridRedo.isEmpty) }
+    func redoChange() { if draftMode { redoDraft() } else if !liveRedo.isEmpty { travelLive(redo:true) } else { redoGrid() } }
     func loadProductivity() {
         do {
             if FileManager.default.fileExists(atPath:archiveURL("draft").path) { recoveredDraft = try WorkspaceFile.load(SavedPreset.self,from:archiveURL("draft")); guard recoveredDraft?.preset != nil else { throw MIDIError.message("The recovered draft is corrupt.") } }

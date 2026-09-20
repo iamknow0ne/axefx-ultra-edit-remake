@@ -1,4 +1,4 @@
-# Axe-Edit 1.0.191 parity audit — Ultra Edit 0.4
+# Axe-Edit 1.0.191 parity audit — Ultra Edit 0.5.0
 
 **Verdict: not 100% parity, and not every hardware function is validated.** This is an inventory of identifiable features, not a percentage computed from an invented denominator. Ultra support is the target. Axe-Fx II-only features are separated. A recovered control definition is not proof of working behavior.
 
@@ -16,7 +16,7 @@ Status: **implemented** describes available code/UI; **hardware-tested** is limi
 
 ## Connection and editing
 
-| Original capability | 0.4 result | Evidence / remaining gap |
+| Original capability | 0.5 result | Evidence / remaining gap |
 | --- | --- | --- |
 | Native editor on current Apple Silicon | Implemented and run | arm64 app, SwiftUI/CoreMIDI; this Mac tested, not every macOS version |
 | MIDI port/channel settings | Implemented, hardware-tested | Clarett input/output, program channel selection |
@@ -26,46 +26,46 @@ Status: **implemented** describes available code/UI; **hardware-tested** is limi
 | MIDI Merge / THRU / external controller synchronization | Missing | No controller merge or MIDI learn |
 | Select preset / edit buffer | Implemented | Current reads tested; program recall not comprehensively tested across all slots |
 | Parameter knobs, lists and switches | Partial hardware coverage | 922 definitions; 163 safe queries on six effects verified; remaining families/controls not all exercised |
-| Numeric text entry / original knob interactions | Partial | Native sliders and menus; direct numeric entry not generally available |
+| Numeric text entry / original knob interactions | Implemented | Click values for exact raw or explicitly estimated units; native sliders/menus retained |
 | Model-dependent defaults | Hardware-tested for Amp | Explicit model SET and whole-preset restore; all model-dependent behavior untested |
 | All modifier source/shape controls | Partial | Raw controls; source and damping edit/readback verified; complete source naming and all shapes unverified |
-| Modifier overview / saved modifier settings | Missing | Individual modifier panel only |
-| Noise gate / Output / Controllers panels | Preview only | Protected after unresolved MIDI interruption during prior tests |
-| Effect/global bypass | Partial | Bypass-mode parameter exists; dedicated per-block toggle/global bypass absent |
+| Modifier overview / saved modifier settings | Implemented, software-tested | Read current sources, save nine fields locally, apply Source first with independent field readback |
+| Noise gate / Output / Controllers panels | Implemented with representative hardware tests | Preset records edited through complete verified transfers; system-wide settings excluded |
+| Effect/global bypass | Partial, block flags hardware-tested | Dedicated per-block toggle, five present blocks tested; no global bypass |
 | Effect initialization / initialize all | Missing | No factory-default reset command |
-| Tuner | Missing | No tuner screen or remote activation in 0.3 |
-| Tap tempo | Missing | Receives tempo beats for diagnostics; no tap or tempo UI |
+| Tuner | Implemented, hardware acceptance open | Original protocol decoder and display, configurable CC activation; played-note/remote tests pending |
+| Tap tempo | Implemented, outgoing acceptance open | Incoming pulse/BPM verified; configurable CC sender requires matching hardware assignment |
 | 4 × 12 grid and cables | Hardware-tested | Placement, shunts, connection/removal on edit buffer |
-| Grid move/copy/swap, drag/drop and keyboard editing | Partial, added in 0.4 | Drag move/swap, socket/cable routing, Delete and context-menu alternatives tested; duplicate-instance copy and full legacy keyboard navigation absent |
+| Grid move/copy/swap, drag/drop and keyboard editing | Implemented within Ultra topology | Pointer routing plus scoped arrows/Option-arrows/Delete; duplicate-instance copy remains absent |
 | Grid undo/redo | Hardware-tested for new interactions | 50-step live history for move/swap/connect/disconnect/reroute with exact readback; older place/remove commands reset history |
-| Parameter undo/redo | Partial | Live parameter undo; full offline-draft undo/redo; no general live redo |
-| Copy/paste complete effect settings | Partial, added in 0.3 | Same family and exact record length; parameter bytes only, destination modifiers/routing preserved |
+| Parameter undo/redo | Implemented, software-tested | Live parameter/model Redo with full fresh-state protection; drafts retain separate history |
+| Copy/paste complete effect settings | Partial, clipboard added | Same family/exact record length; parameters only, destination modifiers/routing preserved |
 | Effect-setting file library and drag/drop | Partial | Persistent local settings library; original setting-file interchange and drag/drop absent |
 | Snapshot/compare | Implemented | Exact payload diff and persistent snapshots; full-preset restore verified |
 | Offline editing | Partial, added in 0.3 | Existing non-global ordinary parameters and names; existing grid move/swap and cable editing added in 0.4; no offline model initialization, modifier editing or creation of new effect instances |
 
 ## Preset and asset management
 
-| Original capability | 0.4 result | Evidence / remaining gap |
+| Original capability | 0.5 result | Evidence / remaining gap |
 | --- | --- | --- |
 | Open/export individual .syx presets | Implemented and hardware-tested | Fresh current-preset backup and checksum checks |
 | Read factory bank files | Software-tested | All 384 supplied A/B/C presets parse and round-trip |
 | Rename | Hardware-tested | Full-preset mutation/upload/readback, avoids absent legacy rename ACK |
-| Persistent Store | Implemented, unverified on hardware | Destination backup and readback path; requires an explicitly designated test slot |
-| Full-bank receive / Sync and Backup | Partial | All 384 device slots can be read individually with bank filters and progress; separate full-bank C dump verified by probe; no full-bank backup UI or automatic synchronization |
+| Persistent Store | Hardware-tested on slot 300 | Explicitly authorized temporary write; all bytes read back; original destination and active buffer exactly restored |
+| Full-bank receive / Sync and Backup | Backup implemented and hardware-tested | A/B/C and all384 export; 384 slots checksummed/round-tripped and eight independent slot comparisons; no automatic sync |
 | Full-bank send / selected-bank synchronization | Missing | No bulk persistent writes |
-| Bank reorder/copy/swap/edit/undo | Missing | Library is a collection, not a numbered bank editor |
-| Bank/folder/edit-buffer source modes | Partial | Device slots, imported Mac library, preview and edit-buffer audition; no full source-mode equivalence |
+| Bank reorder/copy/swap/edit/undo | Implemented locally | Numbered bank manager with 30-step Undo/Redo; export before quitting; no bulk send |
+| Bank/folder/edit-buffer source modes | Partial | Device slots, local folders, numbered bank workspace, preview/edit-buffer audition; no full legacy mode equivalence |
 | Preset search by name/effect | Implemented | Persistent Mac library with favorites and duplicate detection; device slots support name/number search without deduplication |
-| File/folder workspace tree | Missing | No general-purpose filesystem manager |
+| File/folder workspace tree | Partial | Top-level folder import and persistent logical groups; no general-purpose filesystem manager |
 | CSV preset import/export | Missing | New Markdown rig sheet is a report, not original CSV interchange |
 | Multiple dockable/colorized viewports | Missing | One editor window and a tools sheet |
-| MRU/smart startup/automatic source saving | Partial | Library/snapshots/pins/draft/settings/setlist persist; no original automatic source synchronization |
-| User-cab .syx management and transfer | Missing | WAV preparation/export is separate; user-cab protocol/gain/readback not validated |
-| Cab audition and name cache | Missing | New local WAV convolution audition is not hardware user-cab audition |
-| Firmware updater | Missing | Not tested by reflashing the user's working Ultra |
+| MRU/smart startup/automatic source saving | Partial | Recent12 files and persistent library/snapshots/pins/drafts/settings/setlist/folders; no automatic device sync or bank autosave |
+| User-cab .syx management and transfer | Implemented experimentally | Q1.31 golden-byte/checksum/round-trip tests; export/upload/original-file re-upload; hardware coefficients/gain/audio unvalidated |
+| Cab audition and name cache | Partial | Local convolution and explicit USER selection in Cabinet1; no hardware cab name cache, audio validation pending |
+| Firmware updater | Excluded by request | No firmware transfer implemented or tested |
 | Original skins/brightness/contrast/window layout | Replaced | Original vector devices and native studio UI, no legacy skin interpreter |
-| File-drop / double-click file association | Missing | Open dialog provided; no document association or drag/drop |
+| File-drop / double-click file association | Implemented | File drop and alternate Finder handler import to the Mac library; no automatic hardware load |
 
 ## Not applicable to an Ultra replacement
 
@@ -85,8 +85,10 @@ Effect settings also close a legacy gap. Rig sheets overlap the purpose of the o
 
 ## Acceptance gates still open
 
-- Designate a disposable stored-preset slot for save/readback/restore acceptance.
-- Diagnose global controls and test every effect family/model/mode/modifier field without changing the restored baseline.
-- Reverse-engineer and verify user-cab scaling/encoding and a safe restore path before hardware upload.
-- Implement and test the missing bank-management, tuner/tempo, initialization, controller and grid workflows above.
-- Audio listening tests, additional MIDI interfaces/firmware, clean installation, Developer ID signing and notarization remain separate gates.
+- All effect/model/mode/modifier combinations, including audible bypass behavior beyond the tested flag readbacks.
+- Real remote tap/tuner operation and a played-note stream using confirmed MIDI assignments.
+- Expendable User Cab destination and physical gain/audio checks; no validated coefficient backup/readback is available.
+- Bulk bank writes/sync, effect initialization, MIDI merge/learn/THRU and remaining legacy interchange/UI gaps listed above. Firmware updating is explicitly excluded.
+- Audio listening tests, additional interfaces/firmware, external clean installation, Developer ID signing and notarization.
+
+[0.5 verification](VERIFICATION-0.5.0.md) separates completed acceptance from these remaining limits. No proprietary executable or personal preset dump is distributed.

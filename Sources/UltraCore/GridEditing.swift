@@ -7,6 +7,7 @@ public struct GridLink: Hashable, Identifiable {
     public init(source: Int, destination: Int) { self.source = source; self.destination = destination }
 }
 public enum GridEdit {
+    case remove(Int)
     case move(source: Int, destination: Int, detach: Bool = false)
     case link(GridLink, enabled: Bool)
     case reroute(GridLink, to: GridLink)
@@ -34,6 +35,10 @@ public extension UltraPreset {
             if enabled { data[offset] |= bit } else { data[offset] &= ~bit }
         }
         switch edit {
+        case let .remove(position):
+            try valid(position)
+            for link in gridLinks where link.source == position || link.destination == position { try set(link,false) }
+            data[34+position*2] = 0; data[35+position*2] &= 0xF0
         case let .link(link, enabled): try set(link,enabled)
         case let .reroute(old, new):
             guard gridLinks.contains(old) else { throw MIDIError.message("That cable has changed. Try again.") }

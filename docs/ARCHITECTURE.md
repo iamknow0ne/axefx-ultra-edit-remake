@@ -41,7 +41,7 @@ Stored reads cover 0–383. On the tested Ultra, bank-C replies can echo a trunc
 
 Full-preset transfers use native `MIDISendSysex`. An acknowledgement is followed by an **800 ms settling interval**, then a separate full-preset readback. Earlier physical trials showed that an ACK alone was insufficient. Routing also re-reads fresh state before mutation and checks stale history to avoid overwriting later front-panel edits.
 
-Model-selector GETs are excluded because firmware 11.00 queries can reinitialize amp parameters. Unvalidated global control IDs 139–141 remain preview-only. These are behavior-based restrictions, not missing metadata.
+Model-selector GETs are excluded because firmware 11.00 queries can reinitialize amp parameters. Global records 139–141 use complete preset mutation/readback; direct global GETs remain blocked. Stored reads have a one-second settling interval before another transaction, preventing temporary transfer data from being treated as the active sound. These are behavior-based restrictions, not missing metadata.
 
 ## Local workspace and processing
 
@@ -51,4 +51,8 @@ Cabinet Lab launches the bundled C++ helper as a separate process with a timeout
 
 ## Evidence boundaries
 
-The simulator and synthetic fixtures validate software behavior, not physical timing or audio quality. Hardware reports cover one Ultra, one firmware and one interface. Persistent Store, user-cab upload, every control/model, every supported macOS version and complete legacy parity remain separate acceptance gates.
+The simulator and synthetic fixtures validate software behavior, not physical timing or audio quality. Hardware reports cover one Ultra, one firmware and one interface. Store slot 300 and representative preset globals/bypass flags have physical readback coverage. User-cab upload/audio, tuner/tap control, every control/model, every supported macOS version and complete legacy parity remain separate acceptance gates.
+
+## 0.5 workspaces
+
+`BankWorkspace` preserves numbered addresses independently of the deduplicated Mac library. Complete bank export rejects holes and recomputes aggregate checksums. `LiveHistoryModel` validates the entire expected payload before applying Undo/Redo. Modifier presets set Source first and independently query each accepted field. `UserCabIR` uses Double to preserve all signed Q1.31 coefficients when decoding and re-encoding existing files. Performance controls use the configured MIDI channel/CCs; only incoming device messages drive the displayed tuner and tempo. These paths never invoke a firmware command.

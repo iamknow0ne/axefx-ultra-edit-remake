@@ -24,7 +24,7 @@ Release the slider and wait for final verification. The latest pending value tak
 
 ## A control is disabled, approximate, or not updating
 
-Check whether you are previewing a file, in an offline draft, viewing an absent effect, or waiting for a transfer. Noise Gate/Output/Controllers are protected previews. A value marked ≈ comes from catalog interpretation. Choose the current block and **Read controls** when enabled. Model selectors are intentionally not live-queried on firmware 11.00 because those queries can reset amp values.
+Check whether you are previewing a file, in an offline draft, viewing an absent effect, or waiting for a transfer. Noise Gate/Output/Controllers need an existing preset record and apply via whole-preset readback. A value marked ≈ comes from catalog interpretation. Choose the current block and **Read controls** when enabled. Model selectors are intentionally not live-queried on firmware 11.00 because those queries can reset amp values.
 
 ## A grid drag is rejected
 
@@ -49,3 +49,11 @@ Quit, copy `~/Library/Application Support/Ultra Edit/` somewhere safe, then reco
 ## Report a reproducible problem
 
 Use a repository issue with app version, macOS version, Ultra firmware, MIDI interface/driver, exact steps, expected/actual behavior, and relevant log excerpt. State whether it happens offline, through the simulator or on hardware. Review logs for personal preset names/data before sharing. Include a minimal preset only if you have permission to share it. For sensitive reports, follow [SECURITY.md](../SECURITY.md).
+
+## A stored read seems to show the wrong current sound
+
+Gen-1 temporarily reuses transfer data after a stored preset or bank read. Version 0.5 waits one second before the next transaction; this was verified with the active sound unchanged. Wait for the scan to finish, then use Read Ultra. Avoid running another editor concurrently.
+
+## Tap/tuner or cab transfer does not respond
+
+Check Performance CC assignments and the MIDI channel against I/O → CTRL. Incoming tempo proves reception, not that outgoing CCs are mapped. Stale tuner readings are hidden. User-cab upload is experimental; inspect the success/error message, preserve the original file and do not infer success from audio silence or the MIDI light. The app has no validated cabinet coefficient readback.

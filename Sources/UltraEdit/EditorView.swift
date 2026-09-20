@@ -5,6 +5,7 @@ struct EditorView: View {
     @ObservedObject var model: EditorModel
     @State private var browser = 0
     @State private var showMIDI = false
+    @State private var showPerformance = false
     init(model: EditorModel, initialBrowser: Int = 0) {
         self.model = model
         _browser = State(initialValue: initialBrowser)
@@ -33,11 +34,15 @@ struct EditorView: View {
                 Spacer()
                 if model.busy > 0 { ProgressView().controlSize(.small); Text("\(model.busy) pending").monospacedDigit() }
                 Button("MIDI log") { model.showLog.toggle() }.buttonStyle(.borderless)
-                Text("ULTRA EDIT  /  0.4.1").foregroundStyle(StudioTheme.muted)
+                Text("ULTRA EDIT  /  0.5.0").foregroundStyle(StudioTheme.muted)
             }.font(.system(size:11)).padding(.horizontal,16).frame(height:32)
         }
         .foregroundStyle(StudioTheme.text).background(StudioTheme.background)
         .preferredColorScheme(.dark)
+        .onDrop(of:["public.file-url"],isTargeted:nil) { providers in
+            for provider in providers { _ = provider.loadObject(ofClass:URL.self) { url,_ in if let url { DispatchQueue.main.async { model.importFiles([url]) } } } }
+            return !providers.isEmpty
+        }
         .alert("Ultra Edit",isPresented:Binding(get:{ model.errorMessage != nil },set:{ if !$0 { model.errorMessage = nil } })) { Button("OK") { model.errorMessage = nil } } message: { Text(model.errorMessage ?? "") }
         .sheet(isPresented:$model.showWorkbench) { WorkbenchView(model:model) }
         .sheet(isPresented:Binding(get:{ model.modifierTarget != nil },set:{ if !$0 { model.modifierTarget = nil } })) { ModifierView(model:model) }
@@ -51,6 +56,7 @@ struct EditorView: View {
             Circle().fill(model.connected ? Color.green : StudioTheme.muted).frame(width:6,height:6)
             Text(model.connected ? "AXE-FX ULTRA  ·  FW \(model.firmware)" : "AXE-FX ULTRA").font(.system(size:11,weight:.medium)).tracking(0.5)
             Spacer()
+            Button("Performance") { showPerformance.toggle() }.popover(isPresented:$showPerformance) { PerformanceView(model:model) }
             Button("Workbench") { model.showWorkbench = true }
             Text(model.inputs.first(where:{$0.id == model.inputID})?.name ?? "No MIDI interface").font(.caption).foregroundStyle(StudioTheme.muted)
             Button { showMIDI.toggle() } label: { Label("MIDI setup",systemImage:"slider.horizontal.3") }.popover(isPresented:$showMIDI) { midiSetup }
@@ -171,11 +177,12 @@ struct EditorView: View {
                 VStack(alignment:.leading,spacing:6) {
                     Text(model.catalog?.name(model.selectedEffect) ?? "Choose an effect").font(.system(size:22,weight:.semibold))
                     Text(model.selectedModelName.uppercased()).font(.system(size:11,weight:.semibold,design:.monospaced)).tracking(1).foregroundStyle(StudioTheme.color(model.activeEffect?.id ?? ""))
-                    Text(model.draftMode ? "Offline editing · autosaved · units approximate" : model.inspectedLibrary != nil ? "Offline preview · approximate values" : !model.selectedControlsWritable ? "Global controls · preview only during validation" : model.canEdit ? "Edits are heard on your Ultra" : "Connect to edit your sound").font(.caption).foregroundStyle(StudioTheme.muted)
+                    Text(model.draftMode ? "Offline editing · autosaved · units approximate" : model.inspectedLibrary != nil ? "Offline preview · approximate values" : model.isPresetGlobal ? "Preset globals · applied on release · full readback" : model.canEdit ? "Edits are heard on your Ultra" : "Connect to edit your sound").font(.caption).foregroundStyle(StudioTheme.muted)
                 }
                 Spacer()
                 VStack(alignment:.trailing,spacing:10) {
-                    Button("Read controls",action:model.readParameters).disabled(!model.canOperate || !model.selectedControlsWritable)
+                    Button(model.selectedBypassed ? "Enable block" : "Bypass block",action:model.toggleBypass).disabled(!model.canOperate || !model.selectedControlsWritable || model.isPresetGlobal || model.bypassParameter == nil)
+            Button("Read controls",action:model.readParameters).disabled(!model.canOperate || !model.selectedControlsWritable || model.isPresetGlobal)
                     if model.comparisonID != nil { Button(model.showComparison ? "Show controls" : "Compare snapshot") { if model.showComparison { model.showComparison = false } else if let entry = model.snapshots.first(where:{$0.id == model.comparisonID}) { model.compareSnapshot(entry) } }.disabled(model.busy > 0) }
                 }
             }.padding(.horizontal,20).padding(.vertical,10).background(StudioTheme.panel)
@@ -238,6 +245,7 @@ struct ParameterRow: View {
     var key: String { "\(model.selectedEffect):\(parameter.id)" }
     var value: ParameterValue? { model.values[key] }
     var editable: Bool { (model.canAdjust(parameter) || model.canEditDraft && parameter.id != model.activeEffect?.typeParameterID) && model.selectedControlsWritable && !parameter.name.lowercased().hasPrefix("spare") && value != nil }
+    @State private var numericEntry = false
     var pinned: Bool { model.pinnedControls.contains(key) }
     var color: Color { StudioTheme.color(model.activeEffect?.id ?? "") }
     var body: some View {
@@ -246,7 +254,7 @@ struct ParameterRow: View {
                 Text(parameter.name).font(.system(size:12,weight:.semibold)).lineLimit(1).help(parameter.name)
                 Spacer(minLength:0)
                 if parameter.modifierID > 0 {
-                    Button { model.readModifier(parameter) } label:{ Image(systemName:"slider.horizontal.3") }.help("Modifier for \(parameter.name)").accessibilityLabel("Modifier for \(parameter.name)").disabled(!model.canOperate || model.draftMode).buttonStyle(.plain)
+                    Button { model.readModifier(parameter) } label:{ Image(systemName:"slider.horizontal.3") }.help("Modifier for \(parameter.name)").accessibilityLabel("Modifier for \(parameter.name)").disabled(!model.canOperate || model.draftMode || model.isPresetGlobal).buttonStyle(.plain)
                 }
                 Button { model.togglePin(parameter) } label: { Image(systemName:pinned ? "pin.fill" : "pin").foregroundStyle(pinned ? StudioTheme.accent : StudioTheme.muted) }.buttonStyle(.plain).help("Pin \(parameter.name)").accessibilityLabel("Pin \(parameter.name)")
             }
@@ -255,7 +263,8 @@ struct ParameterRow: View {
                     DialFace(fraction:(Double(dragging ? Int(draft) : value?.raw ?? parameter.rawMinimum)-Double(parameter.rawMinimum))/Double(max(1,parameter.rawMaximum-parameter.rawMinimum)),color:color).frame(width:50,height:50)
                 }
                 VStack(alignment:.leading,spacing:8) {
-                    Text(display).font(.system(size:14,weight:.medium,design:.monospaced)).lineLimit(1).minimumScaleFactor(0.8).foregroundStyle(value == nil ? StudioTheme.muted : StudioTheme.text).help(display)
+                    Button { numericEntry = true } label: { Text(display).font(.system(size:14,weight:.medium,design:.monospaced)).lineLimit(1).minimumScaleFactor(0.8).foregroundStyle(value == nil ? StudioTheme.muted : StudioTheme.text).help("Enter a numeric value") }.accessibilityLabel("Enter \(parameter.name) value").buttonStyle(.plain).disabled(!editable)
+                        .popover(isPresented:$numericEntry) { NumericParameterEntry(parameter:parameter,raw:value?.raw ?? 0) { model.set(parameter,raw:$0) } }
                     control
                 }.frame(maxWidth:.infinity,alignment:.leading)
             }
@@ -289,19 +298,20 @@ struct ParameterRow: View {
         } else {
             RawParameterSlider(value:Binding(get:{ min(Double(parameter.rawMaximum),max(Double(parameter.rawMinimum),dragging ? draft : Double(value?.raw ?? parameter.rawMinimum))) },set:{
                 draft = $0.rounded()
-                if !model.draftMode {
+                if !model.draftMode && !model.isPresetGlobal {
                     model.updateLive(parameter,raw:Int($0.rounded()))
                     if !dragging { model.endLiveEdit(after:0.15) }
                 }
             }),in:Double(parameter.rawMinimum)...Double(max(parameter.rawMinimum+1,parameter.rawMaximum)),label:parameter.name,onEditingChanged:{ editing in
                 if editing { model.markGesture("BEGIN",parameter:parameter); draft = Double(value?.raw ?? parameter.rawMinimum); dragging = true }
-                else { model.markGesture("END",parameter:parameter); dragging = false; if model.draftMode { model.set(parameter,raw:Int(draft)) } else { model.endLiveEdit() } }
+                else { model.markGesture("END",parameter:parameter); dragging = false; if model.draftMode || model.isPresetGlobal { model.set(parameter,raw:Int(draft)) } else { model.endLiveEdit() } }
             }).tint(color).accessibilityLabel(parameter.name).disabled(!editable)
         }
     }
 }
 
 struct ModifierView: View {
+    @State private var settingName = ""
     @ObservedObject var model: EditorModel
     let fields: [(Int,String)] = [(0,"Source"),(1,"Start"),(2,"Mid"),(3,"End"),(4,"Slope"),(5,"Damping"),(10,"Auto engage"),(11,"PC reset"),(12,"Off value")]
     var body: some View {
@@ -313,12 +323,16 @@ struct ModifierView: View {
                     Text(name).frame(width:100,alignment:.leading)
                     if let value = model.modifierValues[id] {
                         Text(id == 0 ? (value.0 == 0 ? "Not assigned" : "Controller \(value.0)") : "Raw value").foregroundStyle(.secondary).frame(width:180,alignment:.leading)
-                        Stepper("\(value.0)",onIncrement:{ change(id,value.0+1) },onDecrement:{ change(id,value.0-1) }).disabled(model.busy > 0 || (id != 0 && (model.modifierValues[0]?.0 ?? 0) == 0))
+                        Stepper("\(value.0)",onIncrement:{ change(id,value.0+1) },onDecrement:{ change(id,value.0-1) }).disabled(model.modifierApplying || model.busy > 0 || (id != 0 && (model.modifierValues[0]?.0 ?? 0) == 0))
                     } else { Text("Reading…").foregroundStyle(.secondary) }
                 }
             }
-            HStack { Spacer(); Button("Done") { model.modifierTarget = nil }.keyboardShortcut(.defaultAction) }
-        }.padding(24).frame(width:500)
+            Divider()
+            HStack { TextField("Modifier preset name",text:$settingName).textFieldStyle(.roundedBorder); Button("Save") { model.saveModifierSetting(settingName) }.disabled(model.busy > 0 || model.modifierValues.count != 9 || model.modifierApplying) }
+            Menu("Apply modifier preset") { ForEach(model.modifierSettings) { setting in Button(setting.title) { model.applyModifierSetting(setting) } } }.disabled(!model.canOperate || model.modifierSettings.isEmpty)
+            if model.modifierApplying { ProgressView("Applying and verifying fields…") }
+            HStack { Spacer(); Button("Done") { model.modifierTarget = nil }.keyboardShortcut(.defaultAction).disabled(model.modifierApplying) }
+        }.padding(24).frame(width:500).interactiveDismissDisabled(model.modifierApplying)
     }
     func change(_ id: Int,_ value: Int) { guard let parameter = model.modifierTarget, (0...254).contains(value) else { return }; model.modifierRequest(parameter,id:id,value:value) }
 }

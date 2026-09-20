@@ -3,14 +3,14 @@ import UltraCore
 
 extension EditorModel {
     func stopDeviceRead() { deviceReadToken = UUID(); readingDevice = false }
-    func readDeviceSlots(_ slots: [Int] = Array(0..<384)) {
+    func readDeviceSlots(_ slots: [Int] = Array(0..<384), completion: (() -> Void)? = nil) {
         guard connected, !connecting, !gridWorking, !readingDevice, busy == 0, liveKey == nil else { return }
         let slots = slots.filter { (0..<384).contains($0) }
         guard !slots.isEmpty else { return }
         let token = UUID(); deviceReadToken = token; readingDevice = true; deviceReadCount = 0
         func next(_ index: Int) {
             guard self.connected, self.deviceReadToken == token else { return }
-            guard index < slots.count else { self.readingDevice = false; self.status = "Read \(slots.count) stored preset(s) • current sound unchanged"; return }
+            guard index < slots.count else { self.readingDevice = false; self.status = "Read \(slots.count) stored preset(s) • current sound unchanged"; completion?(); return }
             let slot = slots[index]
             self.status = "Reading Ultra slot \(slot) • \(index+1) of \(slots.count)"
             self.request(try! UltraProtocol.storedPreset(slot,header:self.header),timeout:4,priority:.background,match:{ bytes in

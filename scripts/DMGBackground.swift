@@ -19,7 +19,7 @@ arrow.move(to:NSPoint(x:310,y:295));arrow.line(to:NSPoint(x:410,y:295))
 arrow.move(to:NSPoint(x:400,y:305));arrow.line(to:NSPoint(x:410,y:295));arrow.line(to:NSPoint(x:400,y:285))
 amber.setStroke();arrow.lineWidth=3;arrow.stroke()
 text("Apple Silicon  ·  macOS 13+",x:44,y:28,size:12,color:.darkGray)
-text("0.4.1 beta  ·  Read first-launch instructions below",x:350,y:28,size:12,color:.darkGray)
+text("0.5.0 beta  ·  Read first-launch instructions below",x:350,y:28,size:12,color:.darkGray)
 image.unlockFocus()
 let bitmap = NSBitmapImageRep(data:image.tiffRepresentation!)!
 try bitmap.representation(using:.png,properties:[:])!.write(to:URL(fileURLWithPath:CommandLine.arguments[1]))

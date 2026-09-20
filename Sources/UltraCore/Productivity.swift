@@ -102,3 +102,17 @@ public enum WorkspaceFile {
         try encoder.encode(value).write(to:url,options:.atomic)
     }
 }
+
+public extension UltraPreset {
+    /// Preset-local gate, output mixer and controller records. This deliberately
+    /// does not expose system-wide I/O, MIDI or calibration configuration.
+    func settingPresetGlobal(effect: Int, parameter: Int, raw: Int, catalog: Catalog) throws -> UltraPreset {
+        guard [139,140,141].contains(effect), let definition = catalog.effect(effect),
+              let control = definition.parameters.first(where: { $0.id == parameter }),
+              !control.name.lowercased().hasPrefix("spare"),
+              (control.rawMinimum...control.rawMaximum).contains(raw),
+              let range = parameterRange(effect:effect), (0..<range.count).contains(parameter) else { throw MIDIError.message("This preset-global control is unavailable in the current firmware record.") }
+        var data = payload; data[range.lowerBound+parameter] = UInt8(raw)
+        return try replacingPayload(data)
+    }
+}

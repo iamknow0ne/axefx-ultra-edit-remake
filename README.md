@@ -8,12 +8,12 @@
 
 Edit sounds, shape signal paths, and organize a personal library on Apple Silicon.
 
-![Version](https://img.shields.io/badge/version-0.4.1_beta-d6aa68?style=flat-square&labelColor=24272b)
+![Version](https://img.shields.io/badge/version-0.5.0_beta-d6aa68?style=flat-square&labelColor=24272b)
 ![Platform](https://img.shields.io/badge/macOS-13%2B-eeeeee?style=flat-square&labelColor=24272b)
 ![Architecture](https://img.shields.io/badge/Apple_Silicon-native_arm64-eeeeee?style=flat-square&labelColor=24272b)
 ![Built with](https://img.shields.io/badge/built_with-SwiftUI_%2B_CoreMIDI-eeeeee?style=flat-square&labelColor=24272b)
 
-**[Download 0.4.1](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.4.1)** · **[Getting started](docs/INSTALLATION.md)** · **[User guide](docs/USER-GUIDE.md)** · **[Feature status](docs/FEATURES.md)**
+**[Download 0.5.0](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.5.0)** · **[Getting started](docs/INSTALLATION.md)** · **[User guide](docs/USER-GUIDE.md)** · **[Feature status](docs/FEATURES.md)**
 
 </div>
 
@@ -29,14 +29,27 @@ Ultra Edit is an independent replacement for the legacy Axe-Edit application, bu
 
 | In the editor | What you can do |
 | :--- | :--- |
-| **Responsive controls** | Stream slider changes during a gesture, prioritize them over background reads, and verify the final value. One gesture creates one Undo step. |
+| **Responsive controls** | Stream slider changes during a gesture, prioritize them over background reads, and verify the final value. One gesture creates one Undo step; live Redo and numeric entry are included. |
 | **Interactive signal grid** | Move blocks, swap occupied cells, drag connections, reroute cables, and undo routing edits within the Ultra's 4 × 12 topology. |
 | **Illustrated effects** | Browse original vector artwork, page controls, search parameters, pin favorites, and open modifier controls. |
-| **All 384 slots** | Browse banks A/B/C; search by slot number; read individual sounds or a whole bank; copy sounds into the Mac library. |
+| **All 384 slots** | Browse banks A/B/C; search by slot number; read individual sounds or a whole bank; copy sounds into the Mac library, or back up complete banks as `.syx`. |
 | **A personal library** | Import `.syx` presets or banks, search names/effects, mark favorites, preview, load into the edit buffer, and export. |
 | **Recovery and comparison** | Capture named snapshots, inspect exact changes, back up the current sound, and restore with full-preset readback. |
 
-The catalog contains **36 effect families, 69 instances, and 922 control definitions**. These are metadata counts, not a claim that every control has been verified on hardware. Noise Gate, Output, and Controllers remain preview-only.
+The catalog contains **36 effect families, 69 instances, and 922 control definitions**. These are metadata counts, not a claim that every control has been verified on hardware. Noise Gate, Output, and Controllers now support verified whole-preset edits; these apply on release rather than streaming.
+
+## New in 0.5
+
+- **Numbered bank workspace:** reorder, copy, swap and rename sounds across slots 0–383, with local Undo/Redo and complete bank export.
+- **Live Redo and numeric entry:** recover parameter/model changes; refuse history that would overwrite a newer front-panel edit.
+- **Modifier workspace:** scan assignments, save reusable shapes and apply them source-first with individual readback.
+- **Faster navigation:** keyboard grid selection/movement/removal, effect clipboard, file drop, Finder opening, recent files and library folders.
+- **Performance tools:** block bypass, incoming tempo display, tap tempo and tuner controls with configurable MIDI assignments.
+- **Preset globals:** Noise Gate, Output and Controllers through complete verified transfers.
+
+![Numbered bank workspace with synthetic presets](docs/images/bank-workspace.png)
+
+[What's verified in 0.5 →](docs/VERIFICATION-0.5.0.md)
 
 ## More room to experiment
 
@@ -55,18 +68,18 @@ Seven modern workspace tools extend the editing workflow:
 | ![Cabinet Lab with generated impulses and response plots](docs/images/cabinet-lab.png) | ![Setlist with song order and performance notes](docs/images/setlist.png) |
 | Prepare and audition 48 kHz / 1,024-sample impulses. | Keep sounds and performance notes together. |
 
-**An IR cannot faithfully reproduce a NAM model's distortion, compression, or playing dynamics.** The Ultra does not run NAM models. Cabinet Lab exports WAV; direct user-cab upload is not implemented. [Cabinet Lab guide →](docs/CABINET-LAB.md)
+**An IR cannot faithfully reproduce a NAM model's distortion, compression, or playing dynamics.** The Ultra does not run NAM models. Cabinet Lab exports WAV and Gen-1 user-cab `.syx`. Direct cab transfer is experimental: coefficient readback and hardware audio validation remain open. [Cabinet Lab guide →](docs/CABINET-LAB.md)
 
 ## Get connected
 
-1. Download the **arm64 DMG** from the [release page](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.4.1), open it, and drag **Ultra Edit** to **Applications**.
+1. Download the **arm64 DMG** from the [release page](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.5.0), open it, and drag **Ultra Edit** to **Applications**.
 2. Connect both MIDI cables: **interface OUT → Ultra IN**, and **Ultra OUT → interface IN**.
 3. Open **MIDI setup**, select the interface's input/output and matching MIDI channel, then choose **Connect**.
 4. Use **Back up** before experimenting. Choose a block to edit; open **Library → Ultra → Read all 384** to fetch stored sounds.
 
 An incoming tempo light confirms only one direction of MIDI. The editor needs both cables. [Installation and connection guide →](docs/INSTALLATION.md)
 
-Most edits affect the Ultra's **temporary edit buffer**. **Store…** overwrites a numbered hardware slot. Its backup/readback path is implemented but **not yet hardware-validated**. Keep separate backups and read the [preset guide](docs/USER-GUIDE.md#loading-saving-and-backing-up).
+Most edits affect the Ultra's **temporary edit buffer**. **Store…** overwrites a numbered hardware slot. Its backup/write/readback path was **validated on the explicitly designated slot 300**, followed by exact restoration of the destination and active sound. Keep separate backups and read the [preset guide](docs/USER-GUIDE.md#loading-saving-and-backing-up).
 
 Previews, drafts, settings, setlists, and snapshots live on your Mac. No accounts or cloud services are required. Updates are installed manually.
 
@@ -87,7 +100,7 @@ Previews, drafts, settings, setlists, and snapshots live on your Mac. No account
 
 ## Built for the Ultra
 
-Standard, II, III and FM devices are outside scope. Tuner/tap tempo, firmware updates, user-cab transfer, full bank editing, MIDI learn/merge, global editing, and general live parameter Redo are not available. The [legacy parity audit](docs/PARITY-1.0.191.md) records the remaining gaps.
+Standard, II, III and FM devices are outside scope. Firmware updating is deliberately excluded. Bulk bank writes, effect initialization, MIDI learn/merge, system-wide I/O settings, and complete legacy file interchange remain unavailable. Tuner/tempo controls and cab transfer are implemented but still need the separate hardware checks described in the feature audit. The [legacy parity audit](docs/PARITY-1.0.191.md) records the remaining gaps.
 
 Build with Swift 5.9+, the macOS SDK, CMake, and Python 3:
 

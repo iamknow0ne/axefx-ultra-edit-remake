@@ -39,7 +39,11 @@ import UltraCore
         // The real library shows all 384 addresses even with no connected device.
         model.librarySearch = "130"
         try render(EditorView(model:model,initialBrowser:1),size:NSSize(width:1440,height:960),to:output.appendingPathComponent("library.png"))
-        print("Rendered four production views with synthetic offline data.")
+        model.bankWorkspace = try BankWorkspace(presets:["A","B","C"].flatMap { try UltraPreset.readFile(Data(contentsOf:root.appendingPathComponent("Tests/Fixtures/Synthetic_Bank\($0).syx"))) })
+        model.workbenchTab = 4
+        try render(WorkbenchView(model:model),size:NSSize(width:1000,height:820),to:output.appendingPathComponent("bank-workspace.png"))
+        try render(PerformanceView(model:model),size:NSSize(width:460,height:560),to:output.appendingPathComponent("performance.png"))
+        print("Rendered six production views with synthetic offline data.")
     }
     @MainActor static func render<V: View>(_ view: V, size: NSSize, to url: URL) throws {
         let host = NSHostingView(rootView:view)

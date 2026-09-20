@@ -8,7 +8,7 @@ catalog = json.loads((root/'Resources/UltraCatalog.json').read_text())
 def clean(value):
     return str(value).replace('|','/').replace('\n',' ')
 lines = ['# Effect and control reference','', '[Documentation index](README.md) · [Editing guide](USER-GUIDE.md#editing-an-effect)','',
-    'Generated from the shipped interoperability catalog: **36 families, 69 instances, 922 definitions**. This is a control inventory, not proof of all-controls hardware acceptance. Display ranges and units are catalog estimates; raw defaults are bytes, not physical units. Names marked spare may not be editable. Noise Gate, Output and Controllers are preview-only. Firmware/model-specific meanings can differ.','',
+    'Generated from the shipped interoperability catalog: **36 families, 69 instances, 922 definitions**. This is a control inventory, not proof of all-controls hardware acceptance. Display ranges and units are catalog estimates; raw defaults are bytes, not physical units. Names marked spare may not be editable. Noise Gate, Output and Controllers use complete preset transfers, applied on release; direct live queries remain disabled. Firmware/model-specific meanings can differ.','',
     'The editor pages, filters, menus and modifier availability come from these definitions. Change supported controls in the inspector; do not send raw values from this reference directly to hardware. For model initialization, global controls and offline restrictions, see the user guide.','', '## Families','']
 for e in catalog['effects']:
     anchor=e['id'].lower()

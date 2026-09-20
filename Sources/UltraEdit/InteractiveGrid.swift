@@ -18,7 +18,7 @@ struct GridView: View, Equatable {
     @State private var fromInput = false
     @State private var replacing: GridLink?
     @State private var selectedLink: GridLink?
-    @State private var hint = "Drag blocks to move · Drop on a block to swap · Drag sockets to connect"
+    @State private var hint = "Drag blocks to move · Arrows select · Option-arrows move · Delete removes"
     @FocusState private var focused: Bool
     init(model: EditorModel) {
         self.model = model; cells = model.cells; selectedCell = model.selectedCell
@@ -38,8 +38,10 @@ struct GridView: View, Equatable {
                 if let link = selectedLink {
                     Button("Disconnect cable") { remove(link) }.disabled(!editable)
                 }
+                Button("Copy effect",action:model.copyEffectToClipboard).disabled(model.currentPreset == nil || model.busy > 0 || !model.selectedControlsWritable || model.isPresetGlobal)
+                Button("Paste effect",action:model.pasteEffectFromClipboard).disabled(!editable || model.isPresetGlobal)
                 Button { if model.draftMode { model.undoDraft() } else { model.undoGrid() } } label: { Image(systemName:"arrow.uturn.backward") }.accessibilityLabel("Undo routing").help("Undo routing").disabled(!editable || undoCount == 0)
-                Button { model.redoChange() } label: { Image(systemName:"arrow.uturn.forward") }.accessibilityLabel("Redo routing").help("Redo routing").disabled(!editable || redoCount == 0)
+                Button { if model.draftMode { model.redoDraft() } else { model.redoGrid() } } label: { Image(systemName:"arrow.uturn.forward") }.accessibilityLabel("Redo routing").help("Redo routing").disabled(!editable || redoCount == 0)
                 Toggle("Cables",isOn:Binding(get:{model.showConnections},set:{model.showConnections = $0})).toggleStyle(.checkbox)
             }.font(.caption).controlSize(.small)
             GeometryReader { geometry in
@@ -86,7 +88,17 @@ struct GridView: View, Equatable {
             Text(hint).font(.system(size:11)).foregroundStyle(StudioTheme.muted).lineLimit(1).help(hint)
         }
         .focusable().focused($focused)
-        .onDeleteCommand { if let selectedLink { remove(selectedLink) } }
+        .onDeleteCommand { if let selectedLink { remove(selectedLink) } else { model.removeSelectedBlock() } }
+        .onMoveCommand { direction in
+            let moving = NSEvent.modifierFlags.contains(.option)
+            switch direction {
+            case .up: model.navigateGrid(row:-1,column:0,move:moving)
+            case .down: model.navigateGrid(row:1,column:0,move:moving)
+            case .left: model.navigateGrid(row:0,column:-1,move:moving)
+            case .right: model.navigateGrid(row:0,column:1,move:moving)
+            @unknown default: break
+            }
+        }
         .onExitCommand { cancel() }
         .onChange(of:cells) { _ in if let selectedLink, !links.contains(selectedLink) { self.selectedLink = nil } }
         .onChange(of:editable) { value in if !value { cancel() } }
@@ -179,5 +191,5 @@ struct GridView: View, Equatable {
         cancel()
     }
     private func remove(_ link: GridLink) { guard editable else { return }; model.editGrid(.link(link,enabled:false)); selectedLink = nil }
-    private func cancel() { moving = nil; wiring = nil; replacing = nil; target = nil; hint = "Drag blocks to move · Drop on a block to swap · Drag sockets to connect" }
+    private func cancel() { moving = nil; wiring = nil; replacing = nil; target = nil; hint = "Drag blocks to move · Arrows select · Option-arrows move · Delete removes" }
 }

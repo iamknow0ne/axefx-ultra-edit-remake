@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 — Bank and performance workspaces
+
+- Complete bank A/B/C and all-384 backup/export; local numbered move/copy/swap/rename and 30-step Undo/Redo.
+- Live parameter/model Redo with fresh-state checks, numeric raw/estimated-unit entry, grid keyboard editing and effect clipboard.
+- File drop/Finder `.syx` opening, recent files, folder import and persistent local folder organization.
+- Modifier assignment overview and persistent source-first modifier presets with individual field readback.
+- Block bypass and verified preset Noise Gate/Output/Controllers edits. Tap tempo and tuner panel with explicit MIDI assignment confirmation.
+- Gen-1 user-cab Q1.31 encoding/export, experimental upload, exact original `.syx` re-upload and Cabinet 1 selection for audition. Hardware coefficient/audio validation remains pending.
+- Store validated on authorized slot 300, with destination and original edit buffer restored byte-for-byte.
+- One-second settling after stored reads prevents a temporary transfer buffer being mistaken for the active sound; normal live controls keep their fast path.
+- Firmware updating remains excluded. Ad-hoc signed development beta; not notarized.
+
+
 ## 0.4.1 — 2026-09-20
 
 Distribution and documentation beta.

@@ -86,15 +86,19 @@ public final class RequestQueue {
         guard let request = active else { return }
         timer?.invalidate(); timer = nil; active = nil
         generation += 1; cooling = true
-        coolingForeground = request.priority != .background || request.bytes.count > 256
+        let storedRead = request.bytes.count == 10 && request.bytes[5] == 3 && request.bytes[6] != 1
+        // Gen-1 reuses a transfer buffer for stored reads. An immediate patch
+        // query can return that temporary preset instead of the active sound.
+        let settling: TimeInterval = storedRead ? 1.0 : request.bytes.count > 256 ? 0.8 : shortGap
+        coolingForeground = request.priority != .background || request.bytes.count > 256 || storedRead
         let token = generation
         request.completion(result)
         onActivity?(count + (cooling ? 1 : 0))
         guard generation == token else { return }
-        if request.bytes.count <= 256 && shortGap == 0 {
+        if settling == 0 {
             cooling = false; advance(); return
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + (request.bytes.count > 256 ? 0.8 : shortGap)) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + settling) { [weak self] in
             guard let self, self.generation == token else { return }
             self.cooling = false; self.advance()
         }

@@ -5,6 +5,7 @@ struct LibraryBrowser: View {
     @ObservedObject var model: EditorModel
     @State private var source = 0
     @State private var bank = -1
+    @State private var folderName = ""
     private var slots: [Int] {
         let query = model.librarySearch.trimmingCharacters(in:.whitespacesAndNewlines)
         if let number = Int(query), (0..<384).contains(number) { return [number] }
@@ -53,6 +54,8 @@ struct LibraryBrowser: View {
     }
     private var localList: some View {
         VStack(spacing:8) {
+            Picker("Folder",selection:$model.libraryFolder) { Text("All presets").tag("All"); ForEach(model.organization.folders,id:\.self) { Text($0).tag($0) } }.padding(.horizontal,12)
+            HStack { TextField("New folder",text:$folderName).textFieldStyle(.roundedBorder); Button("Add") { model.createLibraryFolder(folderName); folderName = "" } }.padding(.horizontal,12)
             HStack { Toggle("Favorites",isOn:$model.favoritesOnly).toggleStyle(.checkbox); Spacer(); Text("\(model.visibleLibrary.count) presets") }.font(.caption).padding(.horizontal,12)
             if model.library.isEmpty { Text("Open .syx presets or copy sounds from the Ultra. This library is saved on your Mac.").font(.caption).foregroundStyle(StudioTheme.muted).padding(12); Spacer() }
             else {
@@ -65,7 +68,9 @@ struct LibraryBrowser: View {
                         }
                         Text(entry.source).font(.system(size:10)).foregroundStyle(StudioTheme.muted).lineLimit(1)
                         HStack { Button("Load") { model.audition(entry) }.disabled(!model.connected || model.busy > 0 || model.draftMode); Button("Export") { model.exportLibrary(entry) } }.controlSize(.small)
-                    }.padding(.vertical,6)
+                    }.padding(.vertical,6).contextMenu {
+                        Menu("Move to folder") { Button("Unfiled") { model.assignFolder(entry,nil) }; ForEach(model.organization.folders,id:\.self) { folder in Button(folder) { model.assignFolder(entry,folder) } } }
+                    }
                 }.scrollContentBackground(.hidden)
             }
         }

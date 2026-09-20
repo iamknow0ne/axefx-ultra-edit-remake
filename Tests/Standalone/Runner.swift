@@ -29,6 +29,9 @@ func XCTSkip(_ message: String) -> CheckFailure { CheckFailure(message:message) 
         let live = LiveParameterTests()
         let grid = GridTests()
         let tests: [(String, () throws -> Void)] = [
+            ("Bank workspace addressing, moves and complete exports",ModernFeatureTests().testBankWorkspaceRoundTripAndAddressing),
+            ("Numeric, cabinet Q31 and tuner boundary validation",ModernFeatureTests().testNumericCabinetAndTunerBoundaries),
+            ("Stored reads settle before the next edit-buffer query",ModernFeatureTests().testStoredReadSettlesBeforeEditBufferQuery),
             ("Grid moves preserve settings, opaque bytes and cables",grid.testMovePreservesSoundAndFanout),
             ("Grid swaps and cable validation",grid.testSwapAndCableValidation),
             ("All stored-address boundaries and imported bank slots",grid.testStoredAddressesAndBankImport),

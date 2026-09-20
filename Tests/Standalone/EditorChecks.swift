@@ -8,6 +8,7 @@ import UltraCore
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("UltraEditChecks-"+UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:directory) }
         let model = EditorModel(storageRoot:directory,offline:true)
+        var modifierFields: [String:Int] = [:]
         var storedReads = 0
         var corruptNextUpload = false
         var device = baseline, requests: [[UInt8]] = []
@@ -44,6 +45,10 @@ import UltraCore
                 reply = h + [2]
                 reply += Array(bytes[6..<10]); reply += UltraProtocol.nibbles(raw)
                 reply += Array("Device \(raw)".utf8); reply += [0,0xF7]
+            case 7:
+                let key = bytes[6..<12].map(String.init).joined(separator:":")
+                if bytes[14] == 1 { modifierFields[key] = UltraProtocol.byte(bytes[12],bytes[13]) }
+                reply = h+[7]+Array(bytes[6..<12])+UltraProtocol.nibbles(modifierFields[key] ?? 0)+[0,247]
             case 4:
                 device = try UltraPreset(message:bytes)
                 if corruptNextUpload { device = try device.renamed("Rejected QA"); corruptNextUpload = false }
@@ -55,8 +60,8 @@ import UltraCore
             DispatchQueue.main.asyncAfter(deadline:.now()+0.002) { model.receiveTestMessage(reply) }
         }
         func drain() {
-            let until = Date().addingTimeInterval(8)
-            repeat { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) } while (model.busy > 0 || model.readingDevice) && Date() < until
+            let until = Date().addingTimeInterval(20)
+            repeat { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) } while (model.busy > 0 || model.readingDevice || model.modifierScanning || model.modifierApplying) && Date() < until
             precondition(model.busy == 0,"Queue stuck")
             precondition(model.errorMessage == nil,model.errorMessage ?? "")
         }
@@ -70,7 +75,17 @@ import UltraCore
         model.compareSnapshot(model.snapshots[0]); drain()
         precondition(model.comparison.count == 1 && model.comparison[0].id == "106:1")
         model.undoLast(); drain(); precondition(device.payload == baseline.payload && model.undoValues.isEmpty)
-        print("PASS snapshot, one-control diff, parameter edit and undo")
+        model.redoChange(); drain(); precondition(device.effectParameters[106]?[1] == 150)
+        model.undoLast(); drain(); precondition(device.payload == baseline.payload)
+        model.redoChange(); drain()
+        device = try device.renamed("Front panel change")
+        let beforeStale = requests.count
+        model.undoLast()
+        RunLoop.main.run(until:Date().addingTimeInterval(0.2))
+        precondition(model.errorMessage != nil && device.name == "Front panel change")
+        precondition(requests.dropFirst(beforeStale).allSatisfy { $0[5] == 3 })
+        model.errorMessage = nil; device = baseline; model.refreshPreset(); drain()
+        print("PASS snapshot, parameter undo/redo and stale front-panel history protection")
         model.readParameters()
         precondition(model.canAdjust(drive), "Background reads must not lock the slider")
         let gestureStart = requests.count
@@ -94,9 +109,21 @@ import UltraCore
         let restarted = EditorModel(storageRoot:directory,offline:true)
         precondition(restarted.snapshots.count == model.snapshots.count)
         print("PASS rename refresh, verified restore, recovery capture and persisted snapshots")
+        var globalsPayload = baseline.payload
+        var globalsOffset = 130
+        while globalsPayload[globalsOffset] != 0 { globalsOffset += 2 + Int(globalsPayload[globalsOffset+1]) }
+        globalsPayload.replaceSubrange(globalsOffset..<(globalsOffset+7),with:[139,4,50,127,127,127,0])
+        let globalsBaseline = try baseline.replacingPayload(globalsPayload)
+        device = globalsBaseline; model.apply(device)
         let count = requests.count
-        model.selectEffect(139); drain(); precondition(requests.count == count && !model.selectedControlsWritable)
-        print("PASS global controls cannot issue MIDI reads or writes")
+        model.selectEffect(139); drain(); precondition(requests.count == count && model.selectedControlsWritable)
+        let gate = model.catalog!.effect(139)!.parameters.first { $0.id == 0 }!
+        model.set(gate,raw:1); drain()
+        precondition(device.effectParameters[139]?[0] == 1)
+        precondition(requests.dropFirst(count).allSatisfy { $0[5] != 2 })
+        model.undoLast(); drain(); precondition(device.payload == globalsBaseline.payload)
+        device = baseline; model.apply(device)
+        print("PASS preset globals use complete verified transfers without direct global queries")
         model.selectEffect(106); drain()
         model.beginDraft(); drain()
         let draftRequestCount = requests.count
@@ -134,6 +161,11 @@ import UltraCore
         let movedPayload = device.payload
         model.undoGrid(); drain(); precondition(device.payload == baseline.payload && model.gridRedo.count == 1)
         model.redoGrid(); drain(); precondition(device.payload == movedPayload && model.gridUndo.count == 1)
+        model.undoLast(); drain(); precondition(device.payload == baseline.payload)
+        model.moveBlock(from:ampCell,to:emptyCell); drain()
+        model.set(drive,raw:150); drain()
+        precondition(model.gridUndo.isEmpty && model.gridRedo.isEmpty,"Routing-only history must not discard subsequent parameter changes")
+        model.undoLast(); drain(); precondition(device.cells[emptyCell].effect == 106 && device.effectParameters[106]?[1] == baseline.effectParameters[106]?[1])
         model.undoLast(); drain(); precondition(device.payload == baseline.payload)
         print("PASS grid move, recovery, verified undo/redo and main Undo integration")
         // Front-panel parameter changes must survive a move based on a fresh dump.
@@ -179,6 +211,43 @@ import UltraCore
         model.readDeviceSlots([1,2,3]); model.stopDeviceRead(); drain()
         precondition(storedReads == 8 && model.devicePresets[1] == nil && !model.readingDevice)
         print("PASS stored bank boundaries, address matching, duplicate names, cancellation and no writes")
+        model.selectEffect(106); drain()
+        model.readModifierOverview(); drain()
+        precondition(!model.modifierAssignments.isEmpty && !model.modifierScanning)
+        let target = model.modifierAssignments.first { $0.effect == 106 }!.parameter
+        model.readModifier(target); drain()
+        let modifierStart = requests.count
+        let shape = ModifierSetting(title:"QA shape",fields:[0:1,1:0,2:127,3:254,4:100,5:20,10:0,11:0,12:0])
+        model.applyModifierSetting(shape); drain()
+        let operations = requests.dropFirst(modifierStart).filter { $0[5] == 7 }
+        precondition(operations.count == 18)
+        precondition(operations.filter { $0[14] == 1 }.map { UltraProtocol.byte($0[10],$0[11]) } == [0,1,2,3,4,5,10,11,12])
+        precondition(model.modifierValues.mapValues { $0.0 } == shape.fields)
+        model.saveModifierSetting("QA shape")
+        precondition(EditorModel(storageRoot:directory,offline:true).modifierSettings.count == 1)
+        model.modifierTarget = nil
+        print("PASS modifier overview, source-first preset application, independent field queries and persistence")
+        let offlineStart = requests.count
+        let bankPresets = try UltraPreset.readFile(Data(contentsOf:root.appendingPathComponent("Tests/Fixtures/Synthetic_BankA.syx")))
+        model.changeBank(try BankWorkspace(presets:bankPresets))
+        model.editBank(from:0,to:3,mode:0); precondition(model.bankWorkspace.preset(3)?.payload == bankPresets[0].payload)
+        model.travelBank(redo:false); precondition(model.bankWorkspace.preset(0)?.payload == bankPresets[0].payload)
+        model.travelBank(redo:true); precondition(model.bankWorkspace.preset(3)?.payload == bankPresets[0].payload)
+        model.renameBank(slot:3,name:String(repeating:"x",count:21)); precondition(model.errorMessage != nil)
+        model.renameBank(slot:3,name:"Bank test"); precondition(model.bankWorkspace.preset(3)?.name == "Bank test" && model.errorMessage == nil)
+        let incomingURL = directory.appendingPathComponent("import.syx")
+        try Data(baseline.renamed("Imported test").message).write(to:incomingURL)
+        model.importFiles([incomingURL],folder:"Session")
+        let libraryCount = model.library.count
+        model.importFiles([incomingURL],folder:"Session"); precondition(model.library.count == libraryCount)
+        precondition(model.organization.recentFiles.first == incomingURL.path)
+        let organizationRestart = EditorModel(storageRoot:directory,offline:true)
+        precondition(organizationRestart.organization.folders == ["Session"])
+        let badURL = directory.appendingPathComponent("broken.syx"); try Data([0,1,2]).write(to:badURL)
+        model.importFiles([incomingURL,badURL]); precondition(model.errorMessage != nil && model.library.count == libraryCount)
+        model.errorMessage = nil
+        precondition(requests.count == offlineStart)
+        print("PASS bank history, file imports, deduplication, folder persistence and failed-import atomicity without MIDI")
         let beforeCancel = requests.count
         model.updateLive(drive,raw:150); model.updateLive(drive,raw:149); model.endLiveEdit(after:0.15)
         model.disconnect()
@@ -204,6 +273,6 @@ import UltraCore
         while lab.working && Date() < namUntil { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) }
         precondition(!lab.working && lab.namReport != nil && lab.prepared?.samples.count == 1024,lab.message)
         print("PASS app model launches native NAM helper and prepares its actual response")
-        print("16 editor integration groups passed")
+        print("18 editor integration groups passed")
     }
 }

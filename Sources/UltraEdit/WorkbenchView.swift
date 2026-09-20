@@ -15,12 +15,14 @@ struct WorkbenchView: View {
                 Spacer()
                 Text(model.draftMode ? "OFFLINE DRAFT" : model.connected ? "ULTRA CONNECTED" : "OFFLINE").font(.caption.monospaced()).foregroundStyle(StudioTheme.accent)
             }.padding(20)
-            Picker("Tool",selection:$model.workbenchTab) { Text("Effect settings").tag(0); Text("Setlist").tag(1); Text("Cabinet lab").tag(2); Text("Rig sheet").tag(3) }.pickerStyle(.segmented).padding(.horizontal,20).padding(.bottom,16).disabled(lab.working)
+            Picker("Tool",selection:$model.workbenchTab) { Text("Effect settings").tag(0); Text("Setlist").tag(1); Text("Cabinet lab").tag(2); Text("Rig sheet").tag(3); Text("Banks").tag(4); Text("Modifiers").tag(5) }.pickerStyle(.segmented).padding(.horizontal,20).padding(.bottom,16).disabled(lab.working)
             Divider()
             Group {
                 if model.workbenchTab == 0 { effects }
                 else if model.workbenchTab == 1 { setlist }
-                else if model.workbenchTab == 2 { ScrollView { CabinetLabView(lab:lab) } }
+                else if model.workbenchTab == 2 { ScrollView { CabinetLabView(model:model,lab:lab) } }
+                else if model.workbenchTab == 5 { ModifierOverviewView(model:model) }
+                else if model.workbenchTab == 4 { BankWorkspaceView(model:model) }
                 else { rigSheet }
             }.padding(20).frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.topLeading)
             Divider()
@@ -38,7 +40,7 @@ struct WorkbenchView: View {
                 DeviceArtwork(type:model.activeEffect?.id ?? "Amp").frame(width:140,height:92)
                 VStack(alignment:.leading,spacing:6) { Text(model.catalog?.name(model.selectedEffect) ?? "Select an effect").font(.title2); Text("Save a whole effect's parameter settings and paste them into a compatible block. Destination routing and modifiers remain in place.").foregroundStyle(StudioTheme.muted).fixedSize(horizontal:false,vertical:true) }
             }
-            HStack { TextField("Setting name",text:$model.effectSettingTitle).textFieldStyle(.roundedBorder); Button("Save selected effect",action:model.saveEffectSetting).disabled(model.currentPreset == nil || model.busy > 0 || !model.selectedControlsWritable) }
+            HStack { TextField("Setting name",text:$model.effectSettingTitle).textFieldStyle(.roundedBorder); Button("Save selected effect",action:model.saveEffectSetting).disabled(model.currentPreset == nil || model.busy > 0 || !model.selectedControlsWritable || model.isPresetGlobal) }
             if model.effectSettings.isEmpty { Text("Saved effects will appear here. Select a block in the editor first.").foregroundStyle(StudioTheme.muted).padding(.vertical,24) }
             List(model.effectSettings) { setting in
                 HStack {

@@ -10,6 +10,11 @@ if args.contains("--help") {
     Default operation only queries firmware, preset name, edit buffer and Amp 1 Drive.
     --simulate exposes a virtual Ultra for app and transport testing; no hardware access.
     --verify-suite runs reversible edit-buffer acceptance tests with backup/restore; no stored slots.
+    --verify-banks reads all 384 presets and verifies bank exports; no writes.
+    --verify-performance changes/restores preset-global fields and bypass flags in the edit buffer.
+    --verify-store SLOT temporarily OVERWRITES the specified stored slot, backs it up and restores it.
+      Use only an explicitly authorized expendable destination; interruption can require manual recovery.
+    Close other editors before hardware probes. No firmware transfer is implemented.
     """); exit(0)
 }
 if args.contains("--simulate") {
@@ -29,6 +34,18 @@ try transport.connect(source:source.id,destination:destination.id)
 RunLoop.main.run(until:Date().addingTimeInterval(0.3))
 let outputURL = URL(fileURLWithPath:option("--capture-directory") ?? "evidence")
 try FileManager.default.createDirectory(at:outputURL,withIntermediateDirectories:true)
+if args.contains("--verify-banks") {
+    do { try BankVerification.run(transport:transport,directory:outputURL); exit(0) }
+    catch { fputs("Bank verification stopped: \(error.localizedDescription)\n",stderr); exit(1) }
+}
+if args.contains("--verify-performance") {
+    do { try PerformanceVerification.run(transport:transport,directory:outputURL); exit(0) }
+    catch { fputs("Performance verification stopped: \(error.localizedDescription)\n",stderr); exit(1) }
+}
+if let value = option("--verify-store"), let slot = Int(value) {
+    do { try StoreVerification.run(transport:transport,slot:slot,directory:outputURL); exit(0) }
+    catch { fputs("Store verification stopped: \(error.localizedDescription)\n",stderr); exit(1) }
+}
 if args.contains("--verify-grid") || args.contains("--verify-stored") {
     do { try GridVerification.run(transport:transport,directory:outputURL,storedOnly:args.contains("--verify-stored")); exit(0) }
     catch { fputs("Verification stopped: \(error.localizedDescription)\n",stderr); exit(1) }

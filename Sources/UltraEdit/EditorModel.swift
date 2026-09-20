@@ -50,10 +50,25 @@ final class EditorModel: ObservableObject {
     @Published var inspectedLibrary: UUID?
     @Published var dirty = false
     @Published var showConnections = true
+    @Published var tunerReading: TunerReading?
+    @Published var tunerAt: Date?
+    @Published var tempoAt: Date?
+    @Published var observedBPM: Double?
+    @Published var tapCC = 14
+    @Published var tunerCC = 15
+    @Published var performanceMappingConfirmed = false
+    @Published var tunerCommandedOn = false
     var tempoMessages = 0
     @Published var showLog = false
+    @Published var modifierSettings: [ModifierSetting] = []
+    @Published var modifierAssignments: [ModifierAssignment] = []
+    @Published var modifierScanning = false
+    @Published var modifierApplying = false
+    var modifierScanToken = UUID()
     @Published var modifierValues: [Int: (Int,String)] = [:]
     @Published var modifierTarget: ParameterDefinition?
+    @Published var liveUndo: [LiveHistoryStep] = []
+    @Published var liveRedo: [LiveHistoryStep] = []
     @Published var undoValues: [ParameterValue] = []
     @Published var modelUndo: UltraPreset?
     @Published var snapshots: [SavedPreset] = []
@@ -77,6 +92,11 @@ final class EditorModel: ObservableObject {
     @Published var selectedSong: UUID?
     @Published var songNotes = ""
     @Published var workspaceError: String?
+    @Published var organization = LibraryOrganization()
+    @Published var libraryFolder = "All"
+    @Published var bankWorkspace = BankWorkspace()
+    @Published var bankUndo: [BankWorkspace] = []
+    @Published var bankRedo: [BankWorkspace] = []
     var toolsWritable = true
     private let storageRoot: URL?
     private var archiveWritable = true
@@ -95,9 +115,9 @@ final class EditorModel: ObservableObject {
     var activeEffect: EffectDefinition? { catalog?.effect(selectedEffect) }
     var parameters: [ParameterDefinition] { (activeEffect?.parameters ?? []).filter { (selectedPage == "All" || $0.page == selectedPage) && (!pinnedOnly || pinnedControls.contains("\(selectedEffect):\($0.id)")) && (filter.isEmpty || $0.name.localizedCaseInsensitiveContains(filter) || $0.key.localizedCaseInsensitiveContains(filter)) } }
     var pages: [String] { ["All"] + (activeEffect?.parameters.map(\.page) ?? []).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } } }
-    var canEdit: Bool { !draftMode && connected && currentPreset != nil && inspectedLibrary == nil && !connecting && !gridWorking }
-    var canOperate: Bool { canEdit && busy == 0 && liveKey == nil && !readingDevice }
-    var selectedControlsWritable: Bool { ![139,140,141].contains(selectedEffect) }
+    var canEdit: Bool { !draftMode && connected && currentPreset != nil && inspectedLibrary == nil && !connecting && !gridWorking && !modifierApplying && !modifierScanning }
+    var canOperate: Bool { canEdit && busy == 0 && liveKey == nil && !readingDevice && !modifierScanning && !modifierApplying }
+    var selectedControlsWritable: Bool { catalog?.effect(selectedEffect) != nil }
     init(storageRoot: URL? = nil, offline: Bool = false) {
         self.storageRoot = storageRoot
         let candidates = [Bundle.main.url(forResource: "UltraCatalog", withExtension: "json"), URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("Resources/UltraCatalog.json")].compactMap { $0 }
@@ -105,7 +125,7 @@ final class EditorModel: ObservableObject {
         catch { errorMessage = error.localizedDescription }
         do { library = try PresetArchive.load(archiveURL("library")); snapshots = try PresetArchive.load(archiveURL("snapshots")) }
         catch { archiveWritable = false; errorMessage = error.localizedDescription }
-        loadProductivity()
+        loadProductivity(); loadOrganization(); loadModifierSettings()
         if !offline && !CommandLine.arguments.contains("--offline") { initializeMIDI() }
         else { status = "Offline • Browse the recovered Ultra controls or open a .syx preset." }
     }
@@ -153,7 +173,9 @@ final class EditorModel: ObservableObject {
         } catch { connecting = false; fail(error) }
     }
     func disconnect() {
-        stopDeviceRead(); gridWorking = false; gridUndo = []; gridRedo = []; devicePresets = [:]
+        stopModifierScan(); modifierApplying = false
+        tunerReading = nil; tunerAt = nil; tempoAt = nil; observedBPM = nil; performanceMappingConfirmed = false
+        stopDeviceRead(); liveUndo = []; liveRedo = []; gridWorking = false; gridUndo = []; gridRedo = []; devicePresets = [:]
         keepAlive?.invalidate(); keepAlive = nil; cancelLiveEdit(); queue?.cancel(); transport?.disconnect(); connected = false; connecting = false
         pendingValues = []; failedValues = []; values = [:]; undoValues = []; modelUndo = nil; dirty = false; currentPreset = nil; cells = []; status = "Disconnected"
     }
@@ -166,17 +188,23 @@ final class EditorModel: ObservableObject {
     }
     private func receive(_ bytes: [UInt8]) {
         guard UltraProtocol.validEnvelope(bytes), Array(bytes.prefix(5)) == header else { return }
+        if receivePerformance(bytes) { return }
         if bytes[5] == 0x10 { tempoMessages += 1; if connecting { status = "Ultra tempo received • waiting for query reply…" }; return }
         lastReply = Date(); appendLog("RX",bytes)
         queue?.receive(bytes)
     }
+    func sendController(_ cc: Int, value: Int) throws {
+        guard let transport else { throw MIDIError.message("MIDI unavailable") }
+        let bytes = try UltraProtocol.controller(cc,value:value,channel:channel)
+        try transport.send(bytes); appendLog("TX",bytes)
+    }
     func request(_ bytes: [UInt8], timeout: Double = 1.5, priority: RequestQueue.Priority = .normal, match: @escaping ([UInt8])->Bool, completion: @escaping (Result<[UInt8],Error>)->Void) {
         queue?.enqueue(.init(bytes: bytes, timeout: timeout, priority: priority, matches: match, completion: completion))
     }
-    func refreshPreset() { guard !draftMode else { return }; modelUndo = nil; reloadPreset() }
+    func refreshPreset() { guard !draftMode else { return }; liveUndo = []; liveRedo = []; modelUndo = nil; reloadPreset() }
     private func reloadPreset() {
         guard connected else { return }
-        stopDeviceRead()
+        stopDeviceRead(); stopModifierScan()
         cancelLiveEdit(); queue?.cancel(); inspectedLibrary = nil; values = [:]; pendingValues = []; failedValues = []; undoValues = []
         request(UltraProtocol.patch(header: header), timeout: 4, match: { $0.count == 2060 && $0[5] == 4 && $0[6] == 1 }) { [weak self] result in
             guard let self else { return }
@@ -197,14 +225,14 @@ final class EditorModel: ObservableObject {
         cells = preset.cells; presetName = preset.name; renameText = preset.name
         if let selectedCell, cells.indices.contains(selectedCell), cells[selectedCell].effect != selectedEffect, let current = cells.first(where:{ $0.effect == selectedEffect }) { self.selectedCell = current.id }
         let present = Set(cells.map(\.effect))
-        if !present.contains(selectedEffect), let first = cells.first(where: { catalog?.effect($0.effect) != nil }) { selectedEffect = first.effect; selectedCell = first.id }
+        if !present.contains(selectedEffect), ![139,140,141].contains(selectedEffect), let first = cells.first(where: { catalog?.effect($0.effect) != nil }) { selectedEffect = first.effect; selectedCell = first.id }
     }
     func selectEffect(_ effect: Int, cell: Int? = nil) {
         endLiveEdit(); selectedEffect = effect; selectedCell = cell; selectedPage = "All"; filter = ""
         if canEdit && busy == 0 { readParameters() }
     }
     func readParameters() {
-        guard canEdit, selectedControlsWritable, let effect = activeEffect else { return }
+        guard canEdit, selectedControlsWritable, !isPresetGlobal, let effect = activeEffect else { return }
         let effectID = selectedEffect
         for parameter in effect.parameters {
             // Firmware 11 reinitializes the amp when TYPE is queried, even with
@@ -228,6 +256,7 @@ final class EditorModel: ObservableObject {
         }
     }
     func set(_ parameter: ParameterDefinition, raw: Int, recordUndo: Bool = true) {
+        if isPresetGlobal { setPresetGlobal(parameter,raw:raw); return }
         if draftMode { editDraft(parameter,raw:raw); return }
         guard canAdjust(parameter), (parameter.rawMinimum...parameter.rawMaximum).contains(raw) else { return }
         let effect = selectedEffect, key = "\(selectedEffect):\(parameter.id)"
@@ -243,7 +272,16 @@ final class EditorModel: ObservableObject {
                     let bytes = try UltraProtocol.parameter(effect:effect,parameter:parameter.id,value:raw,header:self.header)
                     self.request(bytes,match:{ UltraProtocol.response($0)?.key == key }) { [weak self] result in
                         guard let self else { return }
-                        do { _ = try result.get(); self.modelUndo = snapshot; self.dirty = true; self.reloadPreset() } catch { self.fail(error) }
+                        do {
+                            guard UltraProtocol.response(try result.get())?.raw == raw else { throw MIDIError.message("Model change rejected") }
+                            self.fetchPreset { result in
+                                do {
+                                    let after = try result.get()
+                                    guard after.effectParameters[effect]?[parameter.id] == UInt8(raw) else { throw MIDIError.message("Model readback differs") }
+                                    self.apply(after); self.rememberLive(before:snapshot,after:after); self.modelUndo = snapshot; self.dirty = true; self.readParameters()
+                                } catch { self.fail(error) }
+                            }
+                        } catch { self.fail(error) }
                     }
                 } catch { self.fail(error) }
             }
@@ -256,12 +294,12 @@ final class EditorModel: ObservableObject {
         guard canEdit, selectedControlsWritable, !parameter.name.lowercased().hasPrefix("spare"),
               currentPreset?.effectParameters[selectedEffect]?.indices.contains(parameter.id) == true,
               values["\(selectedEffect):\(parameter.id)"] != nil else { return false }
-        if parameter.id == activeEffect?.typeParameterID { return canOperate }
+        if isPresetGlobal || parameter.id == activeEffect?.typeParameterID { return canOperate }
         if let liveKey { return liveKey == "\(selectedEffect):\(parameter.id)" }
         return queue?.hasForegroundWork == false
     }
     func updateLive(_ parameter: ParameterDefinition, raw: Int, recordUndo: Bool = true) {
-        guard !draftMode, canAdjust(parameter), parameter.id != activeEffect?.typeParameterID,
+        guard !draftMode, !isPresetGlobal, canAdjust(parameter), parameter.id != activeEffect?.typeParameterID,
               (parameter.rawMinimum...parameter.rawMaximum).contains(raw), let queue else { return }
         liveEnd?.cancel(); liveEnd = nil
         let key = "\(selectedEffect):\(parameter.id)"
@@ -279,7 +317,13 @@ final class EditorModel: ObservableObject {
                 switch result {
                 case .success(let value):
                     self.values[key] = value; self.failedValues.remove(key)
-                    if recordUndo && value.raw != original.raw { self.undoValues.append(original) }
+                    if recordUndo && value.raw != original.raw {
+                        self.undoValues.append(original)
+                        if let before = self.currentPreset, let catalog = self.catalog,
+                           let after = try? before.settingParameter(effect:value.effect,parameter:value.parameter,raw:value.raw,catalog:catalog) {
+                            self.currentPreset = after; self.rememberLive(before:before,after:after)
+                        }
+                    }
                     else if !recordUndo && !self.undoValues.isEmpty { self.undoValues.removeLast() }
                     self.dirty = true; self.status = "\(parameter.name): \(value.text) • readback verified"
                 case .failure(let error):
@@ -310,6 +354,7 @@ final class EditorModel: ObservableObject {
     }
     func undoLast() {
         if draftMode { undoDraft(); return }
+        if canOperate, !liveUndo.isEmpty { travelLive(redo:false); return }
         if canOperate, !gridUndo.isEmpty, undoValues.isEmpty { undoGrid(); return }
         if canOperate, let snapshot = modelUndo, undoValues.isEmpty {
             restoreVerified(snapshot)
@@ -346,7 +391,7 @@ final class EditorModel: ObservableObject {
             }
         } catch { fail(error) }
     }
-    private func statusCommand(_ bytes: [UInt8], function: UInt8, failure: ((Error)->Void)? = nil, completion: @escaping ()->Void) {
+    func statusCommand(_ bytes: [UInt8], function: UInt8, failure: ((Error)->Void)? = nil, completion: @escaping ()->Void) {
         request(bytes, timeout: 3, match: { UltraProtocol.status($0,for:function) != nil }) { [weak self] result in
             do { let reply = try result.get(); guard UltraProtocol.status(reply,for:function) == 1 else { throw MIDIError.message("The Ultra rejected this change.") }; completion() } catch { self?.fail(error); failure?(error) }
         }
@@ -368,14 +413,7 @@ final class EditorModel: ObservableObject {
     func openLibrary() {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [UTType(filenameExtension:"syx") ?? .data]; panel.allowsMultipleSelection = true
         guard panel.runModal() == .OK else { return }
-        for url in panel.urls {
-            do { let presets = try UltraPreset.readFile(Data(contentsOf: url))
-                var fingerprints = Set(library.compactMap { $0.preset?.fingerprint })
-                var added = 0
-                for preset in presets where fingerprints.insert(preset.fingerprint).inserted { library.append(SavedPreset(preset:preset,source:url.lastPathComponent)); added += 1 }
-                try saveArchive(library,name:"library")
-                status = "Added \(added) preset(s) • \(presets.count-added) duplicates skipped" } catch { fail(error) }
-        }
+        importFiles(panel.urls)
     }
     func inspect(_ entry: LibraryEntry) {
         guard !draftMode, busy == 0, liveKey == nil, let preset = entry.preset else { return }
@@ -398,7 +436,7 @@ final class EditorModel: ObservableObject {
         request(getStored, timeout: 4, match: { (try? UltraPreset.storedReply($0,requestedSlot:slot)) != nil }) { [weak self] result in
             guard let self else { return }
             do {
-                let old = try UltraPreset(message: result.get())
+                let old = try UltraPreset.storedReply(result.get(),requestedSlot:slot)
                 let backupDirectory = try self.backupDirectory()
                 let url = backupDirectory.appendingPathComponent("slot-\(slot)-\(Int(Date().timeIntervalSince1970)).syx")
                 try Data(old.message).write(to: url, options: .atomic)
@@ -410,7 +448,7 @@ final class EditorModel: ObservableObject {
                         self.statusCommand(message,function: 4) { [weak self] in
                             guard let self else { return }
                             self.request(getStored,timeout: 4,match: { (try? UltraPreset.storedReply($0,requestedSlot:slot)) != nil }) { [weak self] verification in
-                                do { let stored = try UltraPreset(message: verification.get()); guard stored.payload == preset.payload else { throw MIDIError.message("Stored preset readback differs. Original backup: \(url.path)") }; self?.dirty = false; self?.status = "Stored to \(slot) • readback verified • original backed up" } catch { self?.fail(error) }
+                                do { let stored = try UltraPreset.storedReply(verification.get(),requestedSlot:slot); guard stored.payload == preset.payload else { throw MIDIError.message("Stored preset readback differs. Original backup: \(url.path)") }; self?.dirty = false; self?.status = "Stored to \(slot) • readback verified • original backed up" } catch { self?.fail(error) }
                             }
                         }
                     } catch { self.fail(error) }
@@ -419,12 +457,12 @@ final class EditorModel: ObservableObject {
         }
     }
     func readModifier(_ parameter: ParameterDefinition) {
-        guard canOperate, selectedControlsWritable, currentPreset?.effectParameters[selectedEffect]?.indices.contains(parameter.id) == true, parameter.modifierID > 0 else { return }
+        guard canOperate, selectedControlsWritable, !isPresetGlobal, currentPreset?.effectParameters[selectedEffect]?.indices.contains(parameter.id) == true, parameter.modifierID > 0 else { return }
         modifierTarget = parameter; modifierValues = [:]
         for id in [0,1,2,3,4,5,10,11,12] { modifierRequest(parameter,id: id,value: nil) }
     }
     func modifierRequest(_ parameter: ParameterDefinition, id: Int, value: Int?) {
-        guard canEdit, selectedControlsWritable else { return }
+        guard canEdit, selectedControlsWritable, !isPresetGlobal else { return }
         if value != nil { guard busy == 0, liveKey == nil, id == 0 || (modifierValues[0]?.0 ?? 0) != 0 else { return } }
         let effect = selectedEffect
         let matches: ([UInt8])->Bool = { b in b.count >= 16 && b[5] == 7 && UltraProtocol.byte(b[6],b[7]) == effect && UltraProtocol.byte(b[8],b[9]) == parameter.modifierID && UltraProtocol.byte(b[10],b[11]) == id }
@@ -451,7 +489,7 @@ final class EditorModel: ObservableObject {
             }
         } catch { fail(error) }
     }
-    var visibleLibrary: [SavedPreset] { library.filter { (!favoritesOnly || $0.favorite) && $0.matches(librarySearch,catalog:catalog) }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending } }
+    var visibleLibrary: [SavedPreset] { library.filter { (!favoritesOnly || $0.favorite) && (libraryFolder == "All" || organization.membership[$0.id.uuidString] == libraryFolder) && $0.matches(librarySearch,catalog:catalog) }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending } }
     var comparison: [PresetChange] {
         guard let catalog, let old = snapshots.first(where:{ $0.id == comparisonID })?.preset, let currentPreset else { return [] }
         return currentPreset.changes(from:old,catalog:catalog)
@@ -502,7 +540,7 @@ final class EditorModel: ObservableObject {
     func fetchPreset(_ completion: @escaping (Result<UltraPreset,Error>)->Void) {
         request(UltraProtocol.patch(header:header),timeout:4,match:{ $0.count == 2060 && $0[5] == 4 && $0[6] == 1 }) { result in completion(result.flatMap { bytes in Result { try UltraPreset(message:bytes) } }) }
     }
-    func restoreVerified(_ preset: UltraPreset, original: UltraPreset? = nil, completion: ((Bool)->Void)? = nil) {
+    func restoreVerified(_ preset: UltraPreset, original: UltraPreset? = nil, recordHistory: Bool = true, completion: ((Bool)->Void)? = nil) {
         guard !draftMode, connected, liveKey == nil, busy == 0 || original != nil else { return }
         let perform: (Result<UltraPreset,Error>)->Void = { [weak self] result in
             guard let self else { return }
@@ -520,6 +558,7 @@ final class EditorModel: ObservableObject {
                             guard verified.payload == preset.payload else { throw MIDIError.message("Restore readback differs. The recovery snapshot retains your previous sound.") }
                             self.inspectedLibrary = nil; self.modelUndo = nil; self.undoValues = []; self.dirty = true
                             self.apply(verified); self.showComparison = false
+                            if recordHistory { self.rememberLive(before:original,after:verified) }
                             self.status = "Restored \(verified.name) • all 1024 bytes verified"
                             completion?(true)
                         } catch { self.values = [:]; self.fail(error); completion?(false) }
@@ -539,7 +578,7 @@ final class EditorModel: ObservableObject {
     }
     func exportLog() { saveFile(Data(log.joined(separator:"\n").utf8),name:"Ultra-Edit-MIDI-log.txt") }
     private func backupDirectory() throws -> URL {
-        let dir = try FileManager.default.url(for: .applicationSupportDirectory,in:.userDomainMask,appropriateFor:nil,create:true).appendingPathComponent("Ultra Edit/Backups")
+        let dir = archiveURL("library").deletingLastPathComponent().appendingPathComponent("Backups")
         try FileManager.default.createDirectory(at: dir,withIntermediateDirectories:true); return dir
     }
     func saveFile(_ data: Data, name: String) {

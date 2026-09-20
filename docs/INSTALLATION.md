@@ -16,8 +16,8 @@ Install any driver required by your interface. Ultra Edit installs no driver, ke
 
 ## Install
 
-1. Visit the [0.4.1 release](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.4.1). Access requires permission to the private repository.
-2. Download `Ultra-Edit-0.4.1-arm64.dmg`. A ZIP contains the same app if preferred.
+1. Visit the [0.5.0 release](https://github.com/iamknow0ne/axeedit_remake/releases/tag/v0.5.0). Access requires permission to the private repository.
+2. Download `Ultra-Edit-0.5.0-arm64.dmg`. A ZIP contains the same app if preferred.
 3. Open the disk image and drag **Ultra Edit.app** to **Applications**.
 4. Open the copy in Applications and eject the image.
 

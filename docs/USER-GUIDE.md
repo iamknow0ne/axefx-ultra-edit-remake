@@ -55,9 +55,11 @@ Use the modifier action on an eligible control to open its modifier panel. Chang
 
 ### Undo and protected controls
 
-The main **Undo** reverses supported parameter, model or routing changes. Routing also has Redo; **general live parameter Redo is absent**. Loading/refreshing can clear temporary history. Use snapshots to keep complete sounds across restarts.
+The main **Undo/Redo** reverses supported live parameter, model and routing changes, with fresh-state protection against newer front-panel edits. Loading/refreshing can clear temporary history. Use snapshots to keep complete sounds across restarts.
 
-Noise Gate, Output and Controllers are **preview-only**. Dedicated per-block/global bypass buttons, universal direct numeric entry, tuner and tap-tempo controls are not available. Consult [feature status](FEATURES.md) before relying on an untested control.
+Noise Gate, Output and Controllers now use verified whole-preset edits, applied on release. Click a value for numeric entry; use **Bypass block** for a supported block, or **Performance** for tempo/tuner controls. See the [new workspaces guide](WORKSPACES-0.5.md) for their operation and hardware evidence limits.
+
+For assignment scanning and reusable modifier shapes, see [Modifier workspace](WORKSPACES-0.5.md#modifiers).
 
 ## Interactive grid
 
@@ -75,6 +77,9 @@ Blocks move between cells in the Ultra's fixed **four-row, twelve-column** layou
 | Disconnect | **Delete/Backspace** or **Disconnect** | Removes selected link. |
 | Reroute | Drag cable to another valid destination | Replaces that connection. |
 | Cancel | **Escape** during drag | Abandons the gesture. |
+| Keyboard selection/move | Arrows / **Option-arrows**, with grid focused | Select a cell / move within valid topology. |
+| Remove block | **Delete/Backspace**, with block selected | Live readback and Undo; draft changes stay local. |
+| Effect clipboard | **Copy effect / Paste effect** | Compatible parameter settings; destination routing/modifiers retained. |
 
 Right-click a cell for context-sensitive placement, shunt, removal, movement and previous-column input-connection actions. You cannot duplicate an effect instance by dragging. Empty cells and invalid directions cannot be cable endpoints.
 
@@ -82,7 +87,7 @@ New move/swap/connect/disconnect/reroute operations keep **50 live Undo steps**,
 
 If the grid changed externally, or Undo would overwrite a newer external edit, the app rejects the operation. Refresh and review before trying again. An acknowledgement alone is not treated as successful readback.
 
-Complete routing transactions took about three seconds on the tested connection and can briefly interrupt audio. The older **place/remove** actions reset grid history and do not share all of the new routing Undo coverage. Capture a snapshot before using them.
+Complete routing transactions took about three seconds on the tested connection and can briefly interrupt audio. Keyboard removal now creates a verified history entry. Older context-menu placement/replacement actions reset grid history. Capture a snapshot before using them.
 
 ## Loading, saving and backing up
 
@@ -108,7 +113,7 @@ Library/setlist **Load** sends the embedded preset copy into the temporary edit 
 
 **Store… overwrites the selected hardware slot.** Check the Slot field and confirmation carefully. The implementation backs up the destination before writing and reads it afterward; backup failure blocks the write.
 
-Persistent Store is **implemented but not physically validated** in this beta. No user slot was overwritten just to claim a passing test. Keep `.syx` backups and use the Ultra's front-panel save workflow for important work. There is no full-bank write/reorder UI.
+Persistent Store was physically validated using the owner-designated **slot 300**. The test wrote a temporary renamed preset, compared all 1,024 payload bytes, then restored both the original destination and original edit buffer exactly. This validates the tested unit/firmware/interface, not every combination. Keep independent `.syx` backups. Full-bank hardware writes are not included.
 
 ## Preset libraries
 
@@ -144,7 +149,7 @@ Use **Open .syx presets or bank…** / **Command-O** to import single presets or
 
 Click an entry title to preview it. Search matches names, source and effect names. Stars and **Favorites** focus the collection. **Load** auditions a copy on the connected Ultra; **Export** writes a single `.syx`.
 
-This collection is not a bank editor: no folder tree, bulk reorder/swap, automatic synchronization, or full-bank export UI. Open files through the dialog; Finder file association and file drag/drop are not implemented.
+Use **Workbench → Banks** for numbered local reorder/copy/swap/rename and complete bank backup/export. **On this Mac** remains a deduplicated collection with logical folders. File drop, Finder opening, recent files and top-level folder import are supported. See [Banks and files](WORKSPACES-0.5.md).
 
 ## Snapshots and comparison
 

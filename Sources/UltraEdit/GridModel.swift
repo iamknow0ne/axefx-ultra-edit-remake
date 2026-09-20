@@ -47,9 +47,10 @@ extension EditorModel {
                 guard current.payload == expected.payload else {
                     self.apply(current); throw MIDIError.message("The sound changed since the routing edit. History was cleared to protect the newer settings.")
                 }
-                self.restoreVerified(target,original:current) { [weak self] success in
+                self.restoreVerified(target,original:current,recordHistory:false) { [weak self] success in
                     guard let self else { return }; self.gridWorking = false
                     if success {
+                        self.liveUndo = []; self.liveRedo = []
                         self.gridUndo = redo ? undo + [current] : Array(undo.dropLast())
                         self.gridRedo = redo ? Array(redos.dropLast()) : redos + [current]
                         self.status = redo ? "Routing redone • readback verified" : "Routing undone • readback verified"

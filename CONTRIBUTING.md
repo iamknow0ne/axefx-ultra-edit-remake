@@ -24,7 +24,7 @@ python3 scripts/check-docs.py
 
 The build creates `dist/Ultra Edit.app` and a versioned arm64 ZIP. `APP_PATH` can choose a different bundle destination, useful when an older copy is running. `SIGN_IDENTITY` defaults to ad-hoc `-`; see [release process](docs/RELEASING.md) for Developer ID signing.
 
-The core suite runs 22 groups using a small assertion adapter, so full Xcode/XCTest is not required. The 16 editor groups use an in-process simulated transport with readback mismatch, stale state and cancellation cases; they also launch the real NAM helper. NAM tests use actual Linear, WaveNet and LSTM inference and an analytical linear response. No test in these three suites opens physical MIDI ports or writes hardware.
+The core suite runs 25 groups using a small assertion adapter, so full Xcode/XCTest is not required. The 18 editor groups use an in-process simulated transport with readback mismatch, stale state and cancellation cases; they also launch the real NAM helper. NAM tests use actual Linear, WaveNet and LSTM inference and an analytical linear response. No test in these three suites opens physical MIDI ports or writes hardware.
 
 Fixtures are committed and reproducible with `python3 scripts/generate-fixtures.py`. They are entirely synthetic and **must never be sent to hardware**. The generated WAV is a decaying tone, not a personal guitar recording. No factory bank/legacy installer is needed to build or test.
 

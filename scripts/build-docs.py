@@ -8,6 +8,7 @@ import sys
 import markdown
 
 root = Path(__file__).resolve().parent.parent
+version = (root/"VERSION").read_text().strip()
 out = Path(sys.argv[1]) if len(sys.argv) > 1 else root / '.build/manual'
 out.mkdir(parents=True, exist_ok=True)
 files = [root / name for name in ['README.md','CONTRIBUTING.md','CHANGELOG.md','SECURITY.md','THIRD_PARTY_NOTICES.md']]
@@ -30,7 +31,7 @@ for source in files:
     body = re.sub(r'<img[^>]*src="https://img.shields.io/[^>]+>', '', body)
     base = '../' if relative.parts[0] == 'docs' else ''
     title = next((line.lstrip('# ').strip() for line in source.read_text().splitlines() if line.startswith('# ')), source.stem)
-    target.write_text(f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)} · Ultra Edit</title><style>{css}</style></head><body><nav><a href="{base}README.html">ULTRA EDIT</a><a href="{base}docs/USER-GUIDE.html">User guide</a><a href="{base}docs/INSTALLATION.html">Install</a><a href="{base}docs/TROUBLESHOOTING.html">Troubleshooting</a></nav><main>{body}<footer>Ultra Edit 0.4.1 beta · Local documentation · Independent software for Axe-Fx Ultra</footer></main></body></html>')
+    target.write_text(f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)} · Ultra Edit</title><style>{css}</style></head><body><nav><a href="{base}README.html">ULTRA EDIT</a><a href="{base}docs/USER-GUIDE.html">User guide</a><a href="{base}docs/INSTALLATION.html">Install</a><a href="{base}docs/TROUBLESHOOTING.html">Troubleshooting</a></nav><main>{body}<footer>Ultra Edit {html.escape(version)} beta · Local documentation · Independent software for Axe-Fx Ultra</footer></main></body></html>')
 shutil.copytree(root/'docs/images', out/'docs/images', dirs_exist_ok=True)
 (out/'Resources').mkdir(exist_ok=True)
 shutil.copyfile(root/'Resources/ThirdPartyNotices.txt', out/'Resources/ThirdPartyNotices.txt')

@@ -146,6 +146,8 @@ final class CabinetLabModel: ObservableObject {
 }
 
 struct CabinetLabView: View {
+    var model: EditorModel? = nil
+    @State private var userSlot = 10
     @ObservedObject var lab: CabinetLabModel
     var body: some View {
         VStack(alignment:.leading,spacing:16) {
@@ -180,6 +182,22 @@ struct CabinetLabView: View {
                 Toggle("Trim leading silence",isOn:$lab.trim).onChange(of:lab.trim) { _ in lab.rebuild() }
                 Toggle("Normalize to 95% peak",isOn:$lab.normalize).onChange(of:lab.normalize) { _ in lab.rebuild() }
             }
+            HStack {
+                Stepper("User Cab \(userSlot)",value:$userSlot,in:1...10)
+                Button("Export Ultra .syx…") { lab.exportUserCab(slot:userSlot) }.disabled(lab.prepared == nil || lab.working)
+                if let model {
+                    Button("Upload to Ultra…") {
+                        do { if let ir = lab.prepared { model.uploadUserCab(try UserCabIR(samples:ir.samples,sampleRate:Int(ir.sampleRate)),slot:userSlot) } } catch { lab.message = error.localizedDescription }
+                    }.disabled(!model.canOperate || lab.prepared == nil || lab.working)
+                }
+            }
+            if let model {
+                HStack {
+                    Button("Upload original .syx…") { model.uploadOriginalUserCab(slot:userSlot) }.disabled(!model.canOperate || lab.working)
+                    Button("Select in Cabinet 1") { model.selectUserCab(slot:userSlot) }.disabled(!model.canOperate || lab.working)
+                }
+            }
+            Text("Gen-1 user-cab transfer is experimental. It overwrites the selected User Cab; keep its original .syx. NAM extraction preserves only a linear approximation, never its distortion or dynamics.").font(.caption).foregroundStyle(StudioTheme.muted)
             Divider()
             HStack { Text("CABINET BLEND").font(.caption.bold()); Spacer(); Button("Add second WAV…") { lab.openWAV(second:true) }; if lab.second != nil { Button("Remove",action:lab.clearBlend) } }
             if lab.second != nil {
