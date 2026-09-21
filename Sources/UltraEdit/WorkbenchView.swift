@@ -20,7 +20,7 @@ struct WorkbenchView: View {
             Group {
                 if model.workbenchTab == 0 { effects }
                 else if model.workbenchTab == 1 { setlist }
-                else if model.workbenchTab == 2 { ScrollView { CabinetLabView(model:model,lab:lab) } }
+                else if model.workbenchTab == 2 { ScrollView { CabinetLabView(model:model,lab:lab) }.onAppear { if lab.source == nil, let entry = model.importedCabinets.last { lab.loadImportedCabinet(entry) } } }
                 else if model.workbenchTab == 5 { ModifierOverviewView(model:model) }
                 else if model.workbenchTab == 4 { BankWorkspaceView(model:model) }
                 else { rigSheet }

@@ -22,8 +22,8 @@ extension EditorModel {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [UTType(filenameExtension:"syx") ?? .data]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            guard (try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0) == 8204 else { throw MIDIError.message("Choose a single Gen-1 user cabinet .syx file.") }
-            uploadUserCab(try UserCabIR(message:Array(Data(contentsOf:url))),slot:slot)
+            guard (try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0) <= 8204 else { throw MIDIError.message("Choose a single Gen-1 user cabinet .syx file.") }
+            uploadUserCab(try UserCabIR.readFile(Data(contentsOf:url)),slot:slot)
         } catch { fail(error) }
     }
     func selectUserCab(slot: Int) {

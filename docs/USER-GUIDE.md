@@ -245,3 +245,13 @@ Each successfully read slot is saved automatically on this Mac. You can stop a s
 The library shows its cached count and last cache time. Cache profiles are separated by MIDI input/output identity, channel and protocol. This is not a hardware serial number: if you attach another Ultra to the same connection or modify presets on the front panel, refresh the cache. Loading a slot always reads and checks the actual device; cached bytes are never uploaded by Ultra-slot recall. Complete bank backups also populate the cache.
 
 The cache lives in `~/Library/Application Support/Ultra Edit/Device Cache/`, with atomic files per slot. An interrupted scan retains completed slots; an unreadable slot is skipped with a warning and can be replaced by Refresh. Cache errors do not prevent the app from reading the hardware.
+
+### Importing old .syx collections
+
+Use **Open .syx presets or bank…** for Gen-1 Standard/Ultra tones, banks or cabinet impulses. You can select a mixture. Compatible files are saved locally even when other selected files are unsupported; the result reports imported tones, cabinets, duplicates and skipped filenames. Importing does not send MIDI or overwrite the Ultra.
+
+Tones appear in **Library → On this Mac**. Import clears search/favorites filters and selects the imported folder when applicable. The list uses the embedded preset name, which can differ from the filename. Existing sounds are deduplicated by preset contents; an “Imported 0” result with duplicates means they were already saved. Double-click or Load is a separate action to send a tone to the Ultra's edit buffer.
+
+Cabinets appear under **Imported cabinets…**, which opens **Workbench → Cabinet lab**. Choose an entry from its Imported cabinets menu to inspect or prepare it. **Open WAV / .syx…** also accepts a cabinet directly. Legacy 512-sample files preserve their original coefficients and add silence to reach 1024 samples. Original cabinet uploads use the existing explicit slot-replacement confirmation; importing alone never replaces a User Cab.
+
+Axe-Fx II and later-generation files are not Gen-1 presets and cannot be loaded directly. Effect-block SysEx files and nonstandard/malformed message lengths are reported as unsupported. Folder imports read up to 4096 .syx files at the selected folder's top level; choose nested archive folders separately. Google Drive files must be available locally for macOS to read them.

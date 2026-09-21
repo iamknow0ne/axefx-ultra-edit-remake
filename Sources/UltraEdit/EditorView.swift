@@ -34,11 +34,12 @@ struct EditorView: View {
                 Spacer()
                 if model.busy > 0 { ProgressView().controlSize(.small); Text("\(model.busy) pending").monospacedDigit() }
                 Button("MIDI log") { model.showLog.toggle() }.buttonStyle(.borderless)
-                Text("AXEFX ULTRA EDIT REMAKE  /  0.5.3").foregroundStyle(StudioTheme.muted)
+                Text("AXEFX ULTRA EDIT REMAKE  /  0.5.4").foregroundStyle(StudioTheme.muted)
             }.font(.system(size:11)).padding(.horizontal,16).frame(height:32)
         }
         .foregroundStyle(StudioTheme.text).background(StudioTheme.background)
         .preferredColorScheme(.dark)
+        .onChange(of:model.libraryImportRevision) { _ in browser = 1 }
         .onDrop(of:["public.file-url"],isTargeted:nil) { providers in
             for provider in providers { _ = provider.loadObject(ofClass:URL.self) { url,_ in if let url { DispatchQueue.main.async { model.importFiles([url]) } } } }
             return !providers.isEmpty

@@ -19,30 +19,47 @@ extension EditorModel {
     }
     func importFiles(_ urls: [URL], folder: String? = nil) {
         let folder = folder == "All" ? "All (folder)" : folder
-        do {
-            var incoming = library, next = organization, fingerprints = Set(library.compactMap { $0.preset?.fingerprint }), count = 0
-            for url in urls {
-                guard url.isFileURL, url.pathExtension.lowercased() == "syx" else { throw MIDIError.message("Open an Axe-Fx Ultra .syx preset or bank.") }
-                let size = try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0
-                guard size <= 32*1024*1024 else { throw MIDIError.message("SysEx file exceeds 32 MB.") }
-                for preset in try UltraPreset.readFile(Data(contentsOf:url)) where fingerprints.insert(preset.fingerprint).inserted {
-                    let entry = SavedPreset(preset:preset,source:url.lastPathComponent); incoming.append(entry); count += 1
+        var presetCount = 0, cabCount = 0, duplicates = 0, failures: [String] = []
+        errorMessage = nil
+        for url in urls {
+            do {
+                guard url.isFileURL, url.pathExtension.lowercased() == "syx" else { throw MIDIError.message("Choose a Standard/Ultra .syx preset, bank or cabinet impulse.") }
+                guard (try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0) <= 32*1024*1024 else { throw MIDIError.message("SysEx file exceeds 32 MB.") }
+                let parsed = try UltraImport.read(Data(contentsOf:url))
+                var incoming = library, cabs = importedCabinets, next = organization
+                var fingerprints = Set(library.compactMap { $0.preset?.fingerprint }), added = 0, addedCabs = 0, skipped = 0
+                for preset in parsed.presets {
+                    guard fingerprints.insert(preset.fingerprint).inserted else { skipped += 1; continue }
+                    let entry = SavedPreset(preset:preset,source:url.lastPathComponent); incoming.append(entry); added += 1
                     if let folder { next.membership[entry.id.uuidString] = folder }
                 }
-                next.recentFiles.removeAll { $0 == url.path }; next.recentFiles.insert(url.path,at:0)
-            }
-            next.recentFiles = Array(next.recentFiles.prefix(12))
-            if let folder, !next.folders.contains(folder) { next.folders.append(folder) }
-            try saveArchive(incoming,name:"library"); library = incoming; organization = next; saveOrganization()
-            status = "Imported \(count) preset(s) • duplicate sounds skipped • hardware unchanged"
-        } catch { fail(error) }
+                for cab in parsed.cabinets {
+                    let entry = try SavedCabinet(cabinet:cab,title:url.deletingPathExtension().lastPathComponent)
+                    guard !cabs.contains(where:{ $0.message == entry.message }) else { skipped += 1; continue }
+                    cabs.append(entry); addedCabs += 1
+                }
+                if addedCabs > 0 {
+                    guard cabinetArchiveWritable else { throw MIDIError.message("The saved cabinet archive is protected after a read failure.") }
+                    try WorkspaceFile.save(cabs,to:archiveURL("imported-cabinets")); importedCabinets = cabs; cabCount += addedCabs
+                }
+                if added > 0 { try saveArchive(incoming,name:"library"); library = incoming; presetCount += added }
+                duplicates += skipped
+                next.recentFiles.removeAll { $0 == url.path }; next.recentFiles.insert(url.path,at:0); next.recentFiles = Array(next.recentFiles.prefix(12))
+                if let folder, !next.folders.contains(folder) { next.folders.append(folder) }
+                organization = next; saveOrganization()
+            } catch { failures.append("\(url.lastPathComponent): \(error.localizedDescription)") }
+        }
+        if presetCount > 0 || cabCount > 0 || duplicates > 0 { librarySource = 1; librarySearch = ""; favoritesOnly = false; libraryFolder = folder ?? "All"; libraryImportRevision += 1 }
+        if cabCount > 0 && presetCount == 0 && failures.isEmpty { workbenchTab = 2; showWorkbench = true }
+        status = "Imported \(presetCount) tone(s), \(cabCount) cabinet(s) • \(duplicates) duplicates • \(failures.count) skipped • hardware unchanged"
+        if !failures.isEmpty { errorMessage = status + "\n\n" + failures.prefix(12).joined(separator:"\n") + (failures.count > 12 ? "\n…and \(failures.count-12) more files." : "") }
     }
     func importFolder() {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let files = try FileManager.default.contentsOfDirectory(at:url,includingPropertiesForKeys:[.isRegularFileKey],options:[.skipsHiddenFiles]).filter { $0.pathExtension.lowercased() == "syx" }.sorted { $0.path < $1.path }
-            guard !files.isEmpty, files.count <= 512 else { throw MIDIError.message("Choose a folder containing 1–512 .syx files (top level only).") }
+            guard !files.isEmpty, files.count <= 4096 else { throw MIDIError.message("Choose a folder containing 1–4096 .syx files (top level only).") }
             importFiles(files,folder:url.lastPathComponent)
         } catch { fail(error) }
     }

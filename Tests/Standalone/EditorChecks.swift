@@ -337,8 +337,29 @@ import UltraCore
         precondition(model.organization.recentFiles.first == incomingURL.path)
         let organizationRestart = EditorModel(storageRoot:directory,offline:true)
         precondition(organizationRestart.organization.folders == ["Session"])
+        let standardURL = directory.appendingPathComponent("Standard tone.syx")
+        var standardBytes = try baseline.renamed("Standard import QA").message; standardBytes[4] = 0
+        try Data(standardBytes).write(to:standardURL)
+        let cab = try UserCabIR(samples:[0.25,-0.5]+Array(repeating:0,count:1022),sampleRate:48000)
+        let fullCab = try cab.message(slot:1)
+        var shortCab = Array(fullCab.prefix(4105))+Array(fullCab.suffix(3)); shortCab[4] = 0
+        let cabURL = directory.appendingPathComponent("Legacy 512 cab.syx"); try Data(shortCab).write(to:cabURL)
+        var wrongGeneration = standardBytes; wrongGeneration[4] = 3
+        let wrongURL = directory.appendingPathComponent("Axe-Fx II.syx"); try Data(wrongGeneration).write(to:wrongURL)
+        model.librarySearch = "No matches"; model.favoritesOnly = true; model.libraryFolder = "Empty folder"
+        model.importFiles([wrongURL,standardURL,cabURL])
+        precondition(model.errorMessage?.contains("Axe-Fx II") == true && model.library.contains { $0.title == "Standard import QA" })
+        precondition(model.importedCabinets.count == 1 && model.importedCabinets[0].cabinet?.samples == cab.samples)
+        precondition(model.librarySource == 1 && model.libraryImportRevision > 0 && requests.count == offlineStart)
+        precondition(model.librarySearch.isEmpty && !model.favoritesOnly && model.libraryFolder == "All")
+        let importRestart = EditorModel(storageRoot:directory,offline:true)
+        precondition(importRestart.importedCabinets.count == 1 && importRestart.library.contains { $0.title == "Standard import QA" })
+        model.importFiles([cabURL]); precondition(model.importedCabinets.count == 1)
+        let cabPreview = CabinetLabModel(); cabPreview.loadImportedCabinet(model.importedCabinets[0])
+        precondition(cabPreview.prepared?.samples.count == 1024 && cabPreview.source?.samples == cab.samples)
+        print("PASS Standard tones, 512-sample cabinets, mixed unsupported selections, saved cabinet library and no MIDI")
         let badURL = directory.appendingPathComponent("broken.syx"); try Data([0,1,2]).write(to:badURL)
-        model.importFiles([incomingURL,badURL]); precondition(model.errorMessage != nil && model.library.count == libraryCount)
+        model.importFiles([incomingURL,badURL]); precondition(model.errorMessage != nil && model.library.count == libraryCount+1)
         model.errorMessage = nil
         precondition(requests.count == offlineStart)
         print("PASS bank history, file imports, deduplication, folder persistence and failed-import atomicity without MIDI")
@@ -408,6 +429,6 @@ import UltraCore
         while lab.working && Date() < namUntil { RunLoop.main.run(until:Date().addingTimeInterval(0.01)) }
         precondition(!lab.working && lab.namReport != nil && lab.prepared?.samples.count == 1024,lab.message)
         print("PASS app model launches native NAM helper and prepares its actual response")
-        print("23 editor integration groups passed")
+        print("24 editor integration groups passed")
     }
 }

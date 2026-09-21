@@ -26,16 +26,21 @@ final class CabinetLabModel: ObservableObject {
     private var player: AVAudioPlayer?
     private var process: Process?
     func openWAV(second isSecond: Bool = false) {
-        let panel = NSOpenPanel(); panel.allowedContentTypes = [.wav]
+        let panel = NSOpenPanel(); panel.allowedContentTypes = [.wav, UTType(filenameExtension:"syx") ?? .data]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let size = try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0
-            guard size <= 32*1024*1024 else { throw MIDIError.message("Choose a WAV smaller than 32 MB.") }
-            let ir = try ImpulseResponse.readWAV(Data(contentsOf:url))
+            guard size <= 32*1024*1024 else { throw MIDIError.message("Choose an impulse file smaller than 32 MB.") }
+            let ir = try url.pathExtension.lowercased() == "syx" ? ImpulseResponse(samples:UserCabIR.readFile(Data(contentsOf:url)).samples,sampleRate:48000) : ImpulseResponse.readWAV(Data(contentsOf:url))
             if isSecond { second = ir; secondName = url.lastPathComponent }
             else { source = ir; sourceName = url.lastPathComponent; namReport = nil }
             rebuild()
         } catch { message = error.localizedDescription }
+    }
+    func loadImportedCabinet(_ entry: SavedCabinet) {
+        guard !working, let cab = entry.cabinet else { return }
+        do { source = try ImpulseResponse(samples:cab.samples,sampleRate:48000); sourceName = entry.title; namReport = nil; second = nil; rebuild() }
+        catch { message = error.localizedDescription }
     }
     func clearBlend() { second = nil; secondName = "No second impulse"; rebuild() }
     func rebuild() {
@@ -152,11 +157,16 @@ struct CabinetLabView: View {
     var body: some View {
         VStack(alignment:.leading,spacing:16) {
             HStack {
-                Button("Open WAV…") { lab.openWAV() }.disabled(lab.working)
+                Button("Open WAV / .syx…") { lab.openWAV() }.disabled(lab.working)
                 Button("Extract from NAM…",action:lab.openNAM).disabled(lab.working)
                 if lab.working { ProgressView().controlSize(.small); Button("Cancel",action:lab.cancel) }
                 Spacer()
                 Button("Export WAV…",action:lab.export).disabled(lab.prepared == nil || lab.working)
+            }
+            if let model, !model.importedCabinets.isEmpty {
+                Menu("Imported cabinets (\(model.importedCabinets.count))") {
+                    ForEach(model.importedCabinets) { entry in Button(entry.title) { lab.loadImportedCabinet(entry) } }
+                }.disabled(lab.working)
             }
             Group {
             Text(lab.sourceName).font(.title3.weight(.semibold)).textSelection(.enabled)

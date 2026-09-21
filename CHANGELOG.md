@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.4 — Gen-1 SysEx import compatibility
+
+- Accept Standard-tagged Gen-1 preset and bank files for the Ultra while keeping live MIDI reply validation strict.
+- Recognize cabinet impulses separately, including legacy 512-sample and 1024-sample SysEx; save an imported-cabinet library accessible in Cabinet lab.
+- Open WAV or cabinet SysEx directly in Cabinet lab.
+- Keep compatible files when mixed imports contain unsupported formats; explain skipped files individually.
+- Reveal imported tones in On this Mac and reset filters that could hide them.
+- Increase top-level folder import capacity to 4096 files.
+
 ## 0.5.3 — Persistent Ultra library
 
 - Cache every successfully read stored preset on the Mac, including partial scans and complete bank backups.

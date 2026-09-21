@@ -36,6 +36,16 @@ final class ModernFeatureTests: XCTestCase {
         let cab = try UserCabIR(samples:samples,sampleRate:48000), bytes = try cab.message(slot:10)
         XCTAssertEqual(bytes.count,8204); XCTAssertEqual(Array(bytes.prefix(9)),[240,0,1,116,1,10,9,0,0])
         XCTAssertEqual(Array(bytes[9..<17]),[0,0,0,0,0,0,0,4]) // +0.5 = Q31 0x40000000
+        var standardCab = bytes; standardCab[4] = 0
+        XCTAssertEqual(try UserCabIR.readFile(Data(standardCab)).samples,samples)
+        XCTAssertThrowsError(try UserCabIR(message:standardCab)) // live transport remains strict
+        var shortCab = Array(standardCab.prefix(4105))+Array(standardCab.suffix(3))
+        XCTAssertEqual(try UserCabIR.readFile(Data(shortCab)).samples,samples)
+        shortCab[10] ^= 1; XCTAssertThrowsError(try UserCabIR.readFile(Data(shortCab)))
+        var standardTone = try UltraPreset.readFile(Data(contentsOf:URL(fileURLWithPath:"Tests/Fixtures/synthetic-preset.syx")))[0].message
+        standardTone[4] = 0
+        XCTAssertEqual(try UltraImport.read(Data(standardTone)).presets.count,1)
+        standardTone[4] = 3; XCTAssertThrowsError(try UltraImport.read(Data(standardTone)))
         XCTAssertEqual(try UserCabIR(message:bytes).samples,samples)
         XCTAssertEqual(try UserCabIR(message:bytes).message(slot:10),bytes)
         var bad = bytes; bad[10] ^= 1; XCTAssertThrowsError(try UserCabIR(message:bad))

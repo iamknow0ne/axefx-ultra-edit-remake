@@ -16,8 +16,8 @@ Install any driver required by your interface. AxeFX Ultra Edit Remake installs 
 
 ## Install
 
-1. Visit the [0.5.3 release](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.3).
-2. Download `AxeFX-Ultra-Edit-Remake-0.5.3-arm64.dmg`. A ZIP contains the same app if preferred.
+1. Visit the [0.5.4 release](https://github.com/iamknow0ne/axefx-ultra-edit-remake/releases/tag/v0.5.4).
+2. Download `AxeFX-Ultra-Edit-Remake-0.5.4-arm64.dmg`. A ZIP contains the same app if preferred.
 3. Open the disk image and drag **AxeFX Ultra Edit Remake.app** to **Applications**.
 4. Open the copy in Applications and eject the image.
 

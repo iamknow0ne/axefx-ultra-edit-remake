@@ -120,7 +120,9 @@ public struct UltraPreset {
         let messages = framer.feed(Array(data))
         guard !messages.isEmpty else { throw MIDIError.message("No complete SysEx messages in this file.") }
         var result: [UltraPreset] = []
-        for message in messages {
+        for original in messages {
+            let message = try UltraImport.gen1Message(original)
+            if message[5] == 10 { throw MIDIError.message("This file is a cabinet impulse. Open it in Cabinet lab, or import it through the Library.") }
             if message.count == 262156, UltraProtocol.validEnvelope(message), message[5] == 4, (2...4).contains(message[6]) {
                 guard message[9..<262155].allSatisfy({ $0 < 16 }) else { throw MIDIError.message("Invalid bank encoding.") }
                 let payload = stride(from: 9, to: 262153, by: 2).map { UInt8(UltraProtocol.byte(message[$0],message[$0+1])) }

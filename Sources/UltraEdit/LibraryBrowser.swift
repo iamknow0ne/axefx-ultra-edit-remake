@@ -3,15 +3,18 @@ import UltraCore
 
 struct LibraryBrowser: View {
     @ObservedObject var model: EditorModel
-    @State private var source = 0
+    private var source: Int { model.librarySource }
     @State private var bank = -1
     @State private var folderName = ""
     private var slots: [Int] { model.visibleDeviceSlots(bank:bank) }
     var body: some View {
         VStack(spacing:8) {
-            Picker("Library source",selection:$source) { Text("Ultra").tag(0); Text("On this Mac").tag(1) }.pickerStyle(.segmented).padding(.horizontal,12)
+            Picker("Library source",selection:$model.librarySource) { Text("Ultra").tag(0); Text("On this Mac").tag(1) }.pickerStyle(.segmented).padding(.horizontal,12)
             TextField(source == 0 ? "Search name or slot (e.g. 130)" : "Search names or effects",text:$model.librarySearch).textFieldStyle(.roundedBorder).padding(.horizontal,12)
             navigation
+            if !model.importedCabinets.isEmpty {
+                Button("Imported cabinets (\(model.importedCabinets.count))…") { model.workbenchTab = 2; model.showWorkbench = true }.controlSize(.small)
+            }
             if source == 0 { deviceList } else { localList }
         }
     }

@@ -79,6 +79,10 @@ final class EditorModel: ObservableObject {
     @Published var comparisonID: UUID?
     @Published var showComparison = false
     @Published var librarySearch = ""
+    @Published var librarySource = 0
+    @Published var libraryImportRevision = 0
+    @Published var importedCabinets: [SavedCabinet] = []
+    var cabinetArchiveWritable = true
     @Published var selectedLibrarySlot: Int?
     @Published var selectedMacPreset: UUID?
     @Published var librarySwitching = false
@@ -132,6 +136,14 @@ final class EditorModel: ObservableObject {
         catch { errorMessage = error.localizedDescription }
         do { library = try PresetArchive.load(archiveURL("library")); snapshots = try PresetArchive.load(archiveURL("snapshots")) }
         catch { archiveWritable = false; errorMessage = error.localizedDescription }
+        do {
+            let url = archiveURL("imported-cabinets")
+            if FileManager.default.fileExists(atPath:url.path) {
+                let entries = try WorkspaceFile.load([SavedCabinet].self,from:url)
+                guard entries.allSatisfy({ $0.cabinet != nil }) else { throw MIDIError.message("Imported cabinet archive could not be read.") }
+                importedCabinets = entries
+            }
+        } catch { cabinetArchiveWritable = false; errorMessage = error.localizedDescription }
         restoreLastDeviceCache()
         loadProductivity(); loadOrganization(); loadModifierSettings()
         if !offline && !CommandLine.arguments.contains("--offline") { initializeMIDI() }
